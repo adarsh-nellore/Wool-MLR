@@ -164,7 +164,7 @@ export default function Analyze() {
                   <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
                 ))}
                 {(!products || products.length === 0) && (
-                  <SelectItem value="" disabled>No profiles yet</SelectItem>
+                  <SelectItem value="__none__" disabled>No profiles yet</SelectItem>
                 )}
               </SelectContent>
             </Select>

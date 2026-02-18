@@ -24,21 +24,23 @@ export function log(message: string, source = "express") {
 
 (async () => {
   // Security headers
+  const isDev = process.env.NODE_ENV !== "production";
   app.use(
     helmet({
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          styleSrc:
-            process.env.NODE_ENV === "production"
-              ? ["'self'", "https://fonts.googleapis.com"]
-              : ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          styleSrc: isDev
+            ? ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"]
+            : ["'self'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com"],
-          scriptSrc:
-            process.env.NODE_ENV === "production"
-              ? ["'self'"]
-              : ["'self'", "'unsafe-inline'"],
-          connectSrc: ["'self'"],
+          scriptSrc: isDev
+            ? ["'self'", "'unsafe-inline'"]
+            : ["'self'"],
+          connectSrc: isDev
+            ? ["'self'", "wss:"]
+            : ["'self'"],
+          workerSrc: ["'self'", "blob:"],
           imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
         },
       },
