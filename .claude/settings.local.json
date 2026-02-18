@@ -14,7 +14,12 @@
       "Bash(fuser:*)",
       "Bash(lsof:*)",
       "Bash(ss:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(npx vite build:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(env:*)",
+      "Bash(npx tsx:*)"
     ]
   }
 }

@@ -49,7 +49,11 @@ const DEFAULT_RULES = [
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
-  const [claims, setClaims] = useState([{ id: 1, text: "" }]);
+  const [claims, setClaims] = useState([
+    { id: 1, text: "Designed to facilitate rapid lesion crossing in coronary interventions." },
+    { id: 2, text: "Low-profile catheter tip may help reduce procedural time." },
+    { id: 3, text: "Compatible with standard 6F guide catheters for broad procedural flexibility." },
+  ]);
   const [rules, setRules] = useState(
     DEFAULT_RULES.map((text, i) => ({ id: i + 1, text, isDefault: true }))
   );
@@ -60,11 +64,11 @@ export default function Onboarding() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      productName: "",
-      deviceType: "",
-      description: "",
-      indications: "",
-      risks: "",
+      productName: "CardioFlow X1",
+      deviceType: "implant",
+      description: "Next-generation cardiac catheter system for minimally invasive coronary interventions.",
+      indications: "The CardioFlow X1 Catheter System is indicated for use in percutaneous coronary interventions (PCI) including balloon angioplasty and stent delivery in adult patients with coronary artery disease. The device is intended for use by trained interventional cardiologists in a catheterization laboratory setting.",
+      risks: "Contraindicated in patients with known hypersensitivity to catheter materials (polyurethane, silicone). Not indicated for use in pediatric patients. Risks include vessel perforation, dissection, thrombosis, distal embolization, and arrhythmia. Use caution in patients with severely calcified lesions or chronic total occlusions. Device should not be re-sterilized or reused.",
     },
   });
 
@@ -209,7 +213,7 @@ export default function Onboarding() {
 
                     <div className="space-y-1.5">
                       <Label htmlFor="deviceType" className="text-sm">Device Type</Label>
-                      <Select onValueChange={(val) => form.setValue("deviceType", val)} defaultValue={form.getValues("deviceType")}>
+                      <Select onValueChange={(val) => form.setValue("deviceType", val)} defaultValue="implant">
                         <SelectTrigger>
                           <SelectValue placeholder="Select device type" />
                         </SelectTrigger>

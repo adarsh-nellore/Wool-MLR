@@ -83,6 +83,25 @@ export const analyzeContentSchema = z.object({
   content: z.string().min(1),
 });
 
+// ── Boundary Drift Types ──
+
+export type DriftType =
+  | "Diagnostic Drift"
+  | "Therapeutic Drift"
+  | "Preventive Drift"
+  | "Standalone Drift"
+  | "Classification Escalation"
+  | "Population Expansion"
+  | "Use Environment Expansion"
+  | "Intended Use Redefinition";
+
+export type DriftLevel = 0 | 1 | 2 | 3 | 4;
+
+export type ExposureTag =
+  | "Substantiation Exposure"
+  | "Liability Exposure"
+  | "Advertising Exposure";
+
 // ── Analysis Result Types ──
 
 export interface AnalysisResult {
@@ -95,6 +114,10 @@ export interface AnalysisResult {
   suggestion: string;
   start: number;
   end: number;
+  driftType: DriftType;
+  driftLevel: DriftLevel;
+  exposureTags: ExposureTag[];
+  boundaryReference: string;
 }
 
 export interface AnalysisResponse {
@@ -104,5 +127,6 @@ export interface AnalysisResponse {
     high: number;
     medium: number;
     low: number;
+    driftLevels: { level: DriftLevel; count: number }[];
   };
 }

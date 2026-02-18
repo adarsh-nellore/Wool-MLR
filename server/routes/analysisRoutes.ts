@@ -29,9 +29,10 @@ export function registerAnalysisRoutes(app: Express): void {
       // Run analysis
       const result = await analyzeContent(profile, claims, rules, content);
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing content:", error);
-      res.status(500).json({ error: "Analysis failed" });
+      const message = error?.message || "Analysis failed";
+      res.status(500).json({ error: message });
     }
   });
 }
