@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Violet Soft — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SOFT DESIGN TOKENS
+   ============================================================ */
+:root {
+  --background: oklch(0.9780 0.0090 286.1503);
+  --foreground: oklch(0.3015 0.0572 282.4176);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.3015 0.0572 282.4176);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.3015 0.0572 282.4176);
+  --primary: oklch(0.5417 0.1790 288.0332);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.9274 0.0335 292.6901);
+  --secondary-foreground: oklch(0.4143 0.1039 288.1742);
+  --muted: oklch(0.9620 0.0100 286.1454);
+  --muted-foreground: oklch(0.5426 0.0465 284.7435);
+  --accent: oklch(0.9321 0.0293 262.1410);
+  --accent-foreground: oklch(0.3015 0.0572 282.4176);
+  --destructive: oklch(0.6861 0.2061 14.9941);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.9285 0.0136 285.9625);
+  --input: oklch(0.9285 0.0136 285.9625);
+  --ring: oklch(0.5417 0.1790 288.0332);
+  --chart-1: oklch(0.5417 0.1790 288.0332);
+  --chart-2: oklch(0.7042 0.1602 288.9880);
+  --chart-3: oklch(0.5679 0.2113 276.7065);
+  --chart-4: oklch(0.6356 0.1922 281.8054);
+  --chart-5: oklch(0.4509 0.1758 279.3838);
+  --sidebar: oklch(0.9650 0.0100 286.1454);
+  --sidebar-foreground: oklch(0.3015 0.0572 282.4176);
+  --sidebar-primary: oklch(0.5417 0.1790 288.0332);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9321 0.0293 262.1410);
+  --sidebar-accent-foreground: oklch(0.3015 0.0572 282.4176);
+  --sidebar-border: oklch(0.9285 0.0136 285.9625);
+  --sidebar-ring: oklch(0.5417 0.1790 288.0332);
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --radius: 0.875rem;
+  --shadow-sm: 0px 2px 8px 0px hsl(260 40% 60% / 0.06), 0px 1px 2px 0px hsl(260 40% 60% / 0.04);
+  --shadow: 0px 4px 16px 0px hsl(260 40% 60% / 0.07), 0px 1px 4px 0px hsl(260 40% 60% / 0.04);
+  --shadow-md: 0px 6px 20px 0px hsl(260 40% 60% / 0.08), 0px 2px 6px 0px hsl(260 40% 60% / 0.04);
+  --shadow-lg: 0px 10px 30px -4px hsl(260 40% 60% / 0.10), 0px 4px 10px -2px hsl(260 40% 60% / 0.05);
+  --shadow-xl: 0px 16px 40px -6px hsl(260 40% 60% / 0.12), 0px 6px 16px -4px hsl(260 40% 60% / 0.06);
+
+  /* Gradient helpers */
+  --gradient-primary: linear-gradient(135deg, oklch(0.58 0.19 280), oklch(0.50 0.18 295));
+  --gradient-primary-hover: linear-gradient(135deg, oklch(0.54 0.19 280), oklch(0.46 0.18 295));
+  --gradient-surface: linear-gradient(145deg, oklch(1.0 0 0), oklch(0.975 0.008 286));
+  --gradient-glow: radial-gradient(ellipse at 50% 0%, oklch(0.85 0.08 288 / 0.15), transparent 70%);
+}
+
+.dark {
+  --background: oklch(0.1743 0.0227 283.7998);
+  --foreground: oklch(0.9185 0.0257 285.8834);
+  --card: oklch(0.2284 0.0384 282.9324);
+  --card-foreground: oklch(0.9185 0.0257 285.8834);
+  --popover: oklch(0.2284 0.0384 282.9324);
+  --popover-foreground: oklch(0.9185 0.0257 285.8834);
+  --primary: oklch(0.7162 0.1597 290.3962);
+  --primary-foreground: oklch(0.1743 0.0227 283.7998);
+  --secondary: oklch(0.3139 0.0736 283.4591);
+  --secondary-foreground: oklch(0.8367 0.0849 285.9111);
+  --muted: oklch(0.2710 0.0621 281.4377);
+  --muted-foreground: oklch(0.7166 0.0462 285.1741);
+  --accent: oklch(0.3354 0.0828 280.9705);
+  --accent-foreground: oklch(0.9185 0.0257 285.8834);
+  --destructive: oklch(0.6861 0.2061 14.9941);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.3261 0.0597 282.5832);
+  --input: oklch(0.3261 0.0597 282.5832);
+  --ring: oklch(0.7162 0.1597 290.3962);
+  --chart-1: oklch(0.7162 0.1597 290.3962);
+  --chart-2: oklch(0.6382 0.1047 274.9117);
+  --chart-3: oklch(0.7482 0.1235 244.7492);
+  --chart-4: oklch(0.7124 0.0977 186.6761);
+  --chart-5: oklch(0.7546 0.1831 346.8124);
+  --sidebar: oklch(0.2284 0.0384 282.9324);
+  --sidebar-foreground: oklch(0.9185 0.0257 285.8834);
+  --sidebar-primary: oklch(0.7162 0.1597 290.3962);
+  --sidebar-primary-foreground: oklch(0.1743 0.0227 283.7998);
+  --sidebar-accent: oklch(0.3354 0.0828 280.9705);
+  --sidebar-accent-foreground: oklch(0.9185 0.0257 285.8834);
+  --sidebar-border: oklch(0.3261 0.0597 282.5832);
+  --sidebar-ring: oklch(0.7162 0.1597 290.3962);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.66 0.16 282), oklch(0.74 0.16 296));
+  --gradient-primary-hover: linear-gradient(135deg, oklch(0.62 0.16 282), oklch(0.70 0.16 296));
+  --gradient-surface: linear-gradient(145deg, oklch(0.24 0.04 283), oklch(0.21 0.03 286));
+  --gradient-glow: radial-gradient(ellipse at 50% 0%, oklch(0.50 0.10 288 / 0.12), transparent 70%);
+
+  --shadow-sm: 0px 2px 8px 0px hsl(260 40% 10% / 0.14), 0px 1px 2px 0px hsl(260 40% 10% / 0.08);
+  --shadow: 0px 4px 16px 0px hsl(260 40% 10% / 0.16), 0px 1px 4px 0px hsl(260 40% 10% / 0.08);
+  --shadow-md: 0px 6px 20px 0px hsl(260 40% 10% / 0.18), 0px 2px 6px 0px hsl(260 40% 10% / 0.08);
+  --shadow-lg: 0px 10px 30px -4px hsl(260 40% 10% / 0.22), 0px 4px 10px -2px hsl(260 40% 10% / 0.10);
+  --shadow-xl: 0px 16px 40px -6px hsl(260 40% 10% / 0.26), 0px 6px 16px -4px hsl(260 40% 10% / 0.12);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.page-header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  background: oklch(1.0 0 0 / 0.85);
+}
+.dark .page-header { background: oklch(0.22 0.04 283 / 0.85); }
+
+.page-header h1 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.header-dot {
+  width: 10px; height: 10px;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px 2px oklch(0.54 0.18 288 / 0.3);
+}
+
+.theme-toggle {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+  padding: 0.5rem 1.125rem;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.theme-toggle:hover {
+  background: var(--accent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.section { margin-bottom: 3rem; }
+
+.section-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ============================================================
+   COLOR SWATCHES
+   ============================================================ */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.875rem;
+}
+
+.swatch {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.swatch:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.swatch-color { height: 60px; width: 100%; }
+
+.swatch-info { padding: 0.625rem 0.75rem; }
+
+.swatch-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.125rem;
+}
+
+.swatch-value {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  color: var(--muted-foreground);
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+.type-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  transition: box-shadow 0.25s ease;
+}
+.type-row:hover { box-shadow: var(--shadow-sm); }
+
+.type-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.type-sample { color: var(--foreground); }
+.type-h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; }
+.type-h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; }
+.type-h3 { font-size: 1.125rem; font-weight: 600; line-height: 1.3; }
+.type-body { font-size: 0.875rem; font-weight: 400; line-height: 1.6; }
+.type-small { font-size: 0.75rem; font-weight: 400; color: var(--muted-foreground); }
+.type-mono { font-family: var(--font-mono); font-size: 0.8125rem; }
+.type-stat { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
+
+/* ============================================================
+   BUTTONS — gradient primary, pillowy feel
+   ============================================================ */
+.button-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: calc(var(--radius) + 2px);
+  padding: 0.5625rem 1.125rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  line-height: 1.4;
+  position: relative;
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: var(--primary-foreground);
+  border: none;
+  box-shadow: 0 2px 8px -1px oklch(0.5 0.18 288 / 0.30), 0 1px 2px oklch(0.5 0.18 288 / 0.15);
+}
+.btn-primary:hover {
+  background: var(--gradient-primary-hover);
+  box-shadow: 0 4px 16px -2px oklch(0.5 0.18 288 / 0.40), 0 2px 4px oklch(0.5 0.18 288 / 0.20);
+  transform: translateY(-1px);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.btn-secondary:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--foreground);
+  border-color: var(--border);
+}
+.btn-outline:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+  border-radius: calc(var(--radius) + 2px);
+}
+.btn-ghost:hover { background: var(--accent); }
+
+.btn-destructive {
+  background: linear-gradient(135deg, oklch(0.62 0.20 8), oklch(0.68 0.21 18));
+  color: var(--destructive-foreground);
+  border: none;
+  box-shadow: 0 2px 8px -1px oklch(0.60 0.20 15 / 0.30);
+}
+.btn-destructive:hover {
+  box-shadow: 0 4px 16px -2px oklch(0.60 0.20 15 / 0.40);
+  transform: translateY(-1px);
+}
+
+.btn-sm { font-size: 0.75rem; padding: 0.375rem 0.875rem; border-radius: var(--radius); }
+.btn-lg { font-size: 0.9375rem; padding: 0.6875rem 1.625rem; border-radius: calc(var(--radius) + 4px); }
+.btn-icon { padding: 0.5625rem; min-width: 38px; min-height: 38px; border-radius: calc(var(--radius) + 2px); }
+
+/* ============================================================
+   INPUTS — soft, pillowy
+   ============================================================ */
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+  margin-bottom: 0.375rem;
+}
+
+.input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  padding: 0.5625rem 0.875rem;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--input);
+  border-radius: calc(var(--radius) + 2px);
+  outline: none;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 1px 2px oklch(0.5 0.05 286 / 0.04);
+}
+.input::placeholder { color: var(--muted-foreground); }
+.input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px oklch(0.5417 0.1790 288.0332 / 0.12), inset 0 1px 2px oklch(0.5 0.05 286 / 0.04);
+}
+
+.select {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  padding: 0.5625rem 0.875rem;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--input);
+  border-radius: calc(var(--radius) + 2px);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  box-shadow: inset 0 1px 2px oklch(0.5 0.05 286 / 0.04);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%237b7b9a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+  transition: all 0.25s ease;
+}
+.select:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px oklch(0.5417 0.1790 288.0332 / 0.12);
+}
+
+/* ============================================================
+   BADGES — pill-shaped, soft
+   ============================================================ */
+.badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.badge-default {
+  background: var(--gradient-primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 1px 4px oklch(0.5 0.18 288 / 0.20);
+}
+.badge-secondary { background: var(--secondary); color: var(--secondary-foreground); border-color: var(--border); }
+.badge-outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+.badge-destructive {
+  background: linear-gradient(135deg, oklch(0.62 0.20 8), oklch(0.68 0.21 18));
+  color: var(--destructive-foreground);
+}
+
+.card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.1875rem 0.625rem;
+  border-radius: 9999px;
+}
+.card-badge.positive { background: oklch(0.94 0.04 150); color: oklch(0.42 0.10 150); }
+.card-badge.negative { background: oklch(0.94 0.04 25); color: oklch(0.52 0.13 25); }
+
+/* ============================================================
+   AVATARS — soft ring
+   ============================================================ */
+.avatar-row { display: flex; gap: 0.75rem; align-items: center; }
+
+.avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: var(--primary-foreground);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px oklch(0.5 0.18 288 / 0.18);
+  transition: all 0.25s ease;
+}
+.avatar:hover {
+  box-shadow: 0 4px 12px oklch(0.5 0.18 288 / 0.28);
+  transform: translateY(-1px);
+}
+.avatar-sm { width: 32px; height: 32px; font-size: 0.6875rem; }
+.avatar-lg { width: 48px; height: 48px; font-size: 1rem; }
+
+/* ============================================================
+   CARDS — gradient surface, dreamy shadows
+   ============================================================ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--gradient-surface);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-glow);
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.card:hover::before { opacity: 1; }
+
+.card-header { padding: 1.25rem 1.5rem 0.5rem; position: relative; }
+
+.card-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.card-stat {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--foreground);
+  margin-top: 0.25rem;
+}
+
+.card-body { padding: 0 1.5rem 1.25rem; position: relative; }
+
+.card-footer {
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  position: relative;
+}
+
+/* ============================================================
+   MINI CHARTS
+   ============================================================ */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 48px;
+  padding-top: 0.5rem;
+}
+
+.bar {
+  flex: 1;
+  border-radius: 4px 4px 2px 2px;
+  background: var(--gradient-primary);
+  opacity: 0.65;
+  transition: all 0.25s ease;
+  min-width: 6px;
+}
+.bar:hover { opacity: 1; transform: scaleY(1.06); transform-origin: bottom; }
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sparkline-area {
+  fill: url(#sparkGradient);
+  opacity: 0.15;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar-preview {
+  background: var(--gradient-surface);
+  border: 1px solid var(--sidebar-border);
+  border-radius: calc(var(--radius) + 4px);
+  width: 240px;
+  padding: 1rem 0;
+  display: inline-block;
+  vertical-align: top;
+  box-shadow: var(--shadow);
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sidebar-foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0;
+  margin: 0 0.5rem;
+  border-radius: calc(var(--radius));
+}
+.sidebar-item:hover { background: var(--sidebar-accent); }
+.sidebar-item.active {
+  background: var(--gradient-primary);
+  color: var(--sidebar-primary-foreground);
+  box-shadow: 0 2px 8px -1px oklch(0.5 0.18 288 / 0.30);
+}
+
+.sidebar-item svg { width: 16px; height: 16px; opacity: 0.7; }
+
+.sidebar-section-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-foreground);
+  padding: 1rem 1rem 0.375rem;
+}
+
+/* ============================================================
+   CALENDAR — soft, rounded
+   ============================================================ */
+.calendar {
+  background: var(--gradient-surface);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 1.125rem;
+  width: 290px;
+  display: inline-block;
+  box-shadow: var(--shadow);
+}
+
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.875rem;
+}
+.cal-header span { font-size: 0.8125rem; font-weight: 600; }
+
+.cal-nav {
+  width: 30px; height: 30px;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--foreground);
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+.cal-nav:hover { background: var(--accent); box-shadow: var(--shadow-sm); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  text-align: center;
+}
+
+.cal-day-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  padding: 0.25rem;
+}
+
+.cal-day {
+  font-size: 0.75rem;
+  padding: 0.375rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cal-day:hover { background: var(--accent); }
+.cal-day.today {
+  background: var(--gradient-primary);
+  color: var(--primary-foreground);
+  font-weight: 600;
+  box-shadow: 0 2px 6px oklch(0.5 0.18 288 / 0.25);
+}
+.cal-day.range {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-radius: 50%;
+}
+.cal-day.muted { color: var(--muted-foreground); opacity: 0.35; }
+
+/* ============================================================
+   CHART PALETTE
+   ============================================================ */
+.chart-palette { display: flex; gap: 0.625rem; align-items: flex-end; }
+
+.chart-bar-demo {
+  width: 52px;
+  border-radius: 8px 8px 4px 4px;
+  transition: all 0.25s ease;
+}
+.chart-bar-demo:hover { transform: scaleY(1.06); transform-origin: bottom; }
+
+/* ============================================================
+   SHADOWS
+   ============================================================ */
+.shadow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+
+.shadow-box {
+  background: var(--card);
+  border-radius: calc(var(--radius) + 4px);
+  width: 100%;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--muted-foreground);
+  transition: all 0.3s ease;
+}
+.shadow-box:hover { transform: translateY(-2px); }
+
+/* ============================================================
+   RADIUS
+   ============================================================ */
+.radius-row { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
+
+.radius-box {
+  width: 68px; height: 68px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  color: var(--primary-foreground);
+  box-shadow: 0 2px 8px oklch(0.5 0.18 288 / 0.25);
+  transition: all 0.25s ease;
+}
+.radius-box:hover { transform: translateY(-2px) scale(1.04); }
+
+/* ============================================================
+   GRADIENTS SHOWCASE
+   ============================================================ */
+.gradient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.gradient-card {
+  height: 100px;
+  border-radius: calc(var(--radius) + 4px);
+  display: flex;
+  align-items: flex-end;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+.gradient-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.gradient-label {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: white;
+  background: oklch(0.2 0.03 280 / 0.35);
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  backdrop-filter: blur(4px);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section {
+  animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.section:nth-child(2) { animation-delay: 0.04s; }
+.section:nth-child(3) { animation-delay: 0.08s; }
+.section:nth-child(4) { animation-delay: 0.12s; }
+.section:nth-child(5) { animation-delay: 0.16s; }
+.section:nth-child(6) { animation-delay: 0.20s; }
+.section:nth-child(7) { animation-delay: 0.24s; }
+.section:nth-child(8) { animation-delay: 0.28s; }
+.section:nth-child(9) { animation-delay: 0.32s; }
+.section:nth-child(10) { animation-delay: 0.36s; }
+.section:nth-child(11) { animation-delay: 0.40s; }
+.section:nth-child(12) { animation-delay: 0.44s; }
+.section:nth-child(13) { animation-delay: 0.48s; }
+
+@media (max-width: 768px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .swatch-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <h1><span class="header-dot"></span> Violet Soft Design System</h1>
+  <button class="theme-toggle" onclick="document.documentElement.classList.toggle('dark'); this.textContent = document.documentElement.classList.contains('dark') ? '☀ Light' : '☾ Dark'">☾ Dark</button>
+</header>
+
+<div class="container">
+
+  <!-- COLORS -->
+  <div class="section">
+    <div class="section-title">Color Tokens</div>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:var(--background)"></div><div class="swatch-info"><div class="swatch-name">Background</div><div class="swatch-value">--background</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--foreground)"></div><div class="swatch-info"><div class="swatch-name">Foreground</div><div class="swatch-value">--foreground</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--card);border-bottom:1px solid var(--border)"></div><div class="swatch-info"><div class="swatch-name">Card</div><div class="swatch-value">--card</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--primary)"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-value">--primary</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--secondary)"></div><div class="swatch-info"><div class="swatch-name">Secondary</div><div class="swatch-value">--secondary</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--muted)"></div><div class="swatch-info"><div class="swatch-name">Muted</div><div class="swatch-value">--muted</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--accent)"></div><div class="swatch-info"><div class="swatch-name">Accent</div><div class="swatch-value">--accent</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--destructive)"></div><div class="swatch-info"><div class="swatch-name">Destructive</div><div class="swatch-value">--destructive</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--border)"></div><div class="swatch-info"><div class="swatch-name">Border</div><div class="swatch-value">--border</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--ring)"></div><div class="swatch-info"><div class="swatch-name">Ring</div><div class="swatch-value">--ring</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--sidebar)"></div><div class="swatch-info"><div class="swatch-name">Sidebar</div><div class="swatch-value">--sidebar</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:var(--sidebar-accent)"></div><div class="swatch-info"><div class="swatch-name">Sidebar Accent</div><div class="swatch-value">--sidebar-accent</div></div></div>
+    </div>
+  </div>
+
+  <!-- GRADIENTS -->
+  <div class="section">
+    <div class="section-title">Gradients</div>
+    <div class="gradient-grid">
+      <div class="gradient-card" style="background: linear-gradient(135deg, oklch(0.58 0.19 280), oklch(0.50 0.18 295));">
+        <span class="gradient-label">--gradient-primary</span>
+      </div>
+      <div class="gradient-card" style="background: linear-gradient(135deg, oklch(0.62 0.20 8), oklch(0.68 0.21 18));">
+        <span class="gradient-label">--gradient-destructive</span>
+      </div>
+      <div class="gradient-card" style="background: linear-gradient(145deg, oklch(1.0 0 0), oklch(0.975 0.008 286));">
+        <span class="gradient-label" style="color:var(--foreground);background:oklch(0.9 0.01 286 / 0.6)">--gradient-surface</span>
+      </div>
+      <div class="gradient-card" style="background: linear-gradient(135deg, oklch(0.54 0.18 288), oklch(0.70 0.16 289), oklch(0.85 0.08 290));">
+        <span class="gradient-label">primary spectrum</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART PALETTE -->
+  <div class="section">
+    <div class="section-title">Chart Palette</div>
+    <div class="chart-palette">
+      <div class="chart-bar-demo" style="height:100px; background:var(--chart-1); border-radius:8px 8px 4px 4px;"></div>
+      <div class="chart-bar-demo" style="height:80px; background:var(--chart-2); border-radius:8px 8px 4px 4px;"></div>
+      <div class="chart-bar-demo" style="height:120px; background:var(--chart-3); border-radius:8px 8px 4px 4px;"></div>
+      <div class="chart-bar-demo" style="height:90px; background:var(--chart-4); border-radius:8px 8px 4px 4px;"></div>
+      <div class="chart-bar-demo" style="height:110px; background:var(--chart-5); border-radius:8px 8px 4px 4px;"></div>
+    </div>
+    <div style="display:flex; gap:1rem; margin-top:0.625rem;">
+      <span style="font-family:var(--font-mono);font-size:0.5625rem;color:var(--muted-foreground)">chart-1</span>
+      <span style="font-family:var(--font-mono);font-size:0.5625rem;color:var(--muted-foreground)">chart-2</span>
+      <span style="font-family:var(--font-mono);font-size:0.5625rem;color:var(--muted-foreground)">chart-3</span>
+      <span style="font-family:var(--font-mono);font-size:0.5625rem;color:var(--muted-foreground)">chart-4</span>
+      <span style="font-family:var(--font-mono);font-size:0.5625rem;color:var(--muted-foreground)">chart-5</span>
+    </div>
+  </div>
+
+  <!-- TYPOGRAPHY -->
+  <div class="section">
+    <div class="section-title">Typography</div>
+    <div class="type-row"><span class="type-label">H1 / 2.25rem</span><span class="type-sample type-h1">$15,231.89</span></div>
+    <div class="type-row"><span class="type-label">H2 / 1.5rem</span><span class="type-sample type-h2">Total Revenue</span></div>
+    <div class="type-row"><span class="type-label">H3 / 1.125rem</span><span class="type-sample type-h3">Exercise Minutes</span></div>
+    <div class="type-row"><span class="type-label">Body / 0.875rem</span><span class="type-sample type-body">Your exercise minutes are ahead of where you normally are.</span></div>
+    <div class="type-row"><span class="type-label">Small / 0.75rem</span><span class="type-sample type-small">+20.1% from last month</span></div>
+    <div class="type-row"><span class="type-label">Mono / 0.8125rem</span><span class="type-sample type-mono">font-family: 'JetBrains Mono'</span></div>
+    <div class="type-row"><span class="type-label">Stat / 2rem</span><span class="type-sample type-stat">350</span></div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="section">
+    <div class="section-title">Buttons</div>
+    <div class="button-row" style="margin-bottom:0.75rem">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-outline">Outline</button>
+      <button class="btn btn-ghost">Ghost</button>
+      <button class="btn btn-destructive">Destructive</button>
+    </div>
+    <div class="button-row">
+      <button class="btn btn-primary btn-sm">Small</button>
+      <button class="btn btn-primary">Default</button>
+      <button class="btn btn-primary btn-lg">Large</button>
+      <button class="btn btn-outline btn-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- BADGES -->
+  <div class="section">
+    <div class="section-title">Badges</div>
+    <div class="badge-row">
+      <span class="badge badge-default">Default</span>
+      <span class="badge badge-secondary">Secondary</span>
+      <span class="badge badge-outline">Outline</span>
+      <span class="badge badge-destructive">Destructive</span>
+      <span class="card-badge positive">↑ +12.5%</span>
+      <span class="card-badge negative">↓ -20%</span>
+    </div>
+  </div>
+
+  <!-- AVATARS -->
+  <div class="section">
+    <div class="section-title">Avatars</div>
+    <div class="avatar-row">
+      <div class="avatar avatar-sm">CN</div>
+      <div class="avatar">JD</div>
+      <div class="avatar avatar-lg">AB</div>
+      <div class="avatar" style="background:linear-gradient(135deg, var(--chart-2), var(--chart-3))">ER</div>
+      <div class="avatar" style="background:linear-gradient(135deg, var(--chart-4), var(--chart-5))">MK</div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="section">
+    <div class="section-title">Inputs</div>
+    <div class="input-grid">
+      <div class="form-group"><label>Name</label><input class="input" type="text" placeholder="Evil Rabbit"></div>
+      <div class="form-group"><label>Email</label><input class="input" type="email" placeholder="example@acme.com"></div>
+      <div class="form-group"><label>Card Number</label><input class="input" type="text" placeholder="1234 1234 1234 1234"></div>
+      <div class="form-group"><label>Plan</label><select class="select"><option>Starter Plan</option><option>Pro Plan</option><option>Enterprise</option></select></div>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div class="section">
+    <div class="section-title">Cards</div>
+    <svg width="0" height="0"><defs><linearGradient id="sparkGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--primary)" /><stop offset="100%" stop-color="var(--primary)" stop-opacity="0" /></linearGradient></defs></svg>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="card-title">Total Revenue</span>
+            <span class="card-badge positive">↑ +12.5%</span>
+          </div>
+          <div class="card-stat">$1,250.00</div>
+        </div>
+        <div class="card-body">
+          <svg viewBox="0 0 300 50" style="width:100%;height:50px;">
+            <polygon class="sparkline-area" points="0,50 0,40 30,35 60,38 90,30 120,32 150,20 180,22 210,15 240,10 270,5 300,8 300,50"/>
+            <polyline class="sparkline-line" points="0,40 30,35 60,38 90,30 120,32 150,20 180,22 210,15 240,10 270,5 300,8"/>
+          </svg>
+        </div>
+        <div class="card-footer">Trending up this month · Visitors for the last 6 months</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="card-title">New Customers</span>
+            <span class="card-badge negative">↓ -20%</span>
+          </div>
+          <div class="card-stat">1,234</div>
+        </div>
+        <div class="card-body">
+          <div class="bar-chart">
+            <div class="bar" style="height:60%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:75%"></div>
+            <div class="bar" style="height:50%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:65%"></div>
+            <div class="bar" style="height:80%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:70%"></div>
+            <div class="bar" style="height:85%"></div><div class="bar" style="height:40%"></div><div class="bar" style="height:95%"></div>
+          </div>
+        </div>
+        <div class="card-footer">Down 20% this period · Acquisition needs attention</div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="card-title">Active Accounts</span>
+            <span class="card-badge positive">↑ +12.5%</span>
+          </div>
+          <div class="card-stat">45,678</div>
+        </div>
+        <div class="card-body">
+          <svg viewBox="0 0 300 50" style="width:100%;height:50px;">
+            <polygon class="sparkline-area" points="0,50 0,30 25,28 50,32 75,25 100,20 125,22 150,18 175,15 200,20 225,12 250,10 275,8 300,5 300,50"/>
+            <polyline class="sparkline-line" points="0,30 25,28 50,32 75,25 100,20 125,22 150,18 175,15 200,20 225,12 250,10 275,8 300,5"/>
+          </svg>
+        </div>
+        <div class="card-footer">Strong user retention · Engagement exceeds targets</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR + CALENDAR -->
+  <div class="section">
+    <div class="section-title">Sidebar &amp; Calendar</div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;">
+
+      <div class="sidebar-preview">
+        <div class="sidebar-section-label">Navigation</div>
+        <div class="sidebar-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Analytics
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Projects
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Team
+        </div>
+        <div class="sidebar-section-label">Documents</div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Reports
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          Settings
+        </div>
+      </div>
+
+      <div class="calendar">
+        <div class="cal-header">
+          <button class="cal-nav">‹</button>
+          <span>June 2025</span>
+          <button class="cal-nav">›</button>
+        </div>
+        <div class="cal-grid">
+          <span class="cal-day-label">Su</span><span class="cal-day-label">Mo</span><span class="cal-day-label">Tu</span><span class="cal-day-label">We</span><span class="cal-day-label">Th</span><span class="cal-day-label">Fr</span><span class="cal-day-label">Sa</span>
+          <span class="cal-day">1</span><span class="cal-day">2</span><span class="cal-day">3</span><span class="cal-day">4</span><span class="cal-day today">5</span><span class="cal-day range">6</span><span class="cal-day range">7</span>
+          <span class="cal-day range">8</span><span class="cal-day range">9</span><span class="cal-day range">10</span><span class="cal-day range">11</span><span class="cal-day range">12</span><span class="cal-day today">13</span><span class="cal-day">14</span>
+          <span class="cal-day">15</span><span class="cal-day">16</span><span class="cal-day">17</span><span class="cal-day">18</span><span class="cal-day">19</span><span class="cal-day">20</span><span class="cal-day">21</span>
+          <span class="cal-day">22</span><span class="cal-day">23</span><span class="cal-day">24</span><span class="cal-day">25</span><span class="cal-day">26</span><span class="cal-day">27</span><span class="cal-day">28</span>
+          <span class="cal-day">29</span><span class="cal-day">30</span><span class="cal-day muted">1</span><span class="cal-day muted">2</span><span class="cal-day muted">3</span><span class="cal-day muted">4</span><span class="cal-day muted">5</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SHADOWS -->
+  <div class="section">
+    <div class="section-title">Shadows</div>
+    <div class="shadow-grid">
+      <div class="shadow-box" style="box-shadow:var(--shadow-sm)">shadow-sm</div>
+      <div class="shadow-box" style="box-shadow:var(--shadow)">shadow</div>
+      <div class="shadow-box" style="box-shadow:var(--shadow-md)">shadow-md</div>
+      <div class="shadow-box" style="box-shadow:var(--shadow-lg)">shadow-lg</div>
+      <div class="shadow-box" style="box-shadow:var(--shadow-xl)">shadow-xl</div>
+    </div>
+  </div>
+
+  <!-- RADIUS -->
+  <div class="section">
+    <div class="section-title">Border Radius · base: 0.875rem</div>
+    <div class="radius-row">
+      <div class="radius-box" style="border-radius:calc(var(--radius) - 4px)">sm</div>
+      <div class="radius-box" style="border-radius:calc(var(--radius) - 2px)">md</div>
+      <div class="radius-box" style="border-radius:var(--radius)">lg</div>
+      <div class="radius-box" style="border-radius:calc(var(--radius) + 4px)">xl</div>
+      <div class="radius-box" style="border-radius:9999px">full</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
