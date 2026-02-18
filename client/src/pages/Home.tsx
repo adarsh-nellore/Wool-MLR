@@ -1,13 +1,14 @@
 import { Link, useLocation } from "wouter";
-import { 
-  Plus, 
-  ArrowRight, 
-  FileText, 
-  Box, 
-  Activity, 
+import {
+  Plus,
+  ArrowRight,
+  FileText,
+  Box,
+  Activity,
   MoreVertical,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from "lucide-react";
 import Layout from "../components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -30,7 +31,7 @@ const PRODUCTS = [
     status: "Active",
     analyses: 12,
     issues: 3,
-    color: "bg-blue-500"
+    color: "blue"
   },
   {
     id: "neurostim",
@@ -40,7 +41,7 @@ const PRODUCTS = [
     status: "In Review",
     analyses: 5,
     issues: 0,
-    color: "bg-purple-500"
+    color: "purple"
   },
   {
     id: "orthofix",
@@ -50,109 +51,113 @@ const PRODUCTS = [
     status: "Draft",
     analyses: 0,
     issues: 0,
-    color: "bg-emerald-500"
+    color: "emerald"
   }
 ];
+
+const colorMap: Record<string, { bg: string; text: string; dot: string }> = {
+  blue: { bg: "bg-blue-50", text: "text-blue-600", dot: "bg-blue-500" },
+  purple: { bg: "bg-purple-50", text: "text-purple-600", dot: "bg-purple-500" },
+  emerald: { bg: "bg-emerald-50", text: "text-emerald-600", dot: "bg-emerald-500" },
+};
 
 export default function Home() {
   const [, setLocation] = useLocation();
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-8">
-        
+      <div className="max-w-5xl mx-auto space-y-6">
+
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-            <p className="text-muted-foreground text-lg">
-              Manage your device profiles and their promotional content.
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Manage device profiles and promotional content.
             </p>
           </div>
-          <Button 
-            onClick={() => setLocation("/onboarding")} 
+          <Button
+            onClick={() => setLocation("/onboarding")}
             className="btn-soft-primary"
+            size="sm"
           >
-            <Plus className="mr-2 w-4 h-4" /> New Product Profile
+            <Plus className="mr-1.5 w-3.5 h-3.5" /> New Profile
           </Button>
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PRODUCTS.map((product) => (
-            <Card 
-              key={product.id} 
-              className="card-soft group hover:shadow-lg transition-all duration-300 cursor-pointer border-transparent hover:border-primary/20"
-              onClick={() => setLocation(`/product/${product.id}`)}
-            >
-              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg ${product.color} bg-opacity-10 flex items-center justify-center`}>
-                    <Box className={`w-5 h-5 ${product.color.replace('bg-', 'text-')}`} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base font-bold">{product.name}</CardTitle>
-                    <CardDescription className="text-xs">{product.type}</CardDescription>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreVertical className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setLocation(`/product/${product.id}`)}>
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>Edit Profile</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Archive</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </CardHeader>
-              
-              <CardContent className="mt-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Analyses</p>
-                    <p className="text-2xl font-bold">{product.analyses}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Open Issues</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl font-bold">{product.issues}</p>
-                      {product.issues > 0 && (
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100 h-5 px-1.5">
-                          Alert
-                        </Badge>
-                      )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {PRODUCTS.map((product) => {
+            const colors = colorMap[product.color];
+            return (
+              <Card
+                key={product.id}
+                className="group hover:shadow-md transition-all duration-200 cursor-pointer border-border/60 hover:border-primary/30"
+                onClick={() => setLocation(`/product/${product.id}`)}
+              >
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 rounded-lg ${colors.bg} flex items-center justify-center`}>
+                      <Box className={`w-4 h-4 ${colors.text}`} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm font-semibold">{product.name}</CardTitle>
+                      <CardDescription className="text-xs mt-0.5">{product.type}</CardDescription>
                     </div>
                   </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setLocation(`/product/${product.id}`)}>
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>Edit Profile</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">Archive</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardHeader>
+
+                <CardContent className="pb-3">
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="font-medium text-foreground">{product.analyses}</span> analyses
+                    </div>
+                    {product.issues > 0 ? (
+                      <div className="flex items-center gap-1.5 text-amber-600">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span className="font-medium">{product.issues}</span> issues
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">No issues</span>
+                    )}
+                  </div>
+                </CardContent>
+
+                <div className="px-5 py-2.5 border-t flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Updated {product.lastUpdated}</span>
+                  <ChevronRight className="w-3.5 h-3.5 group-hover:text-primary transition-colors" />
                 </div>
-              </CardContent>
-              
-              <CardFooter className="bg-muted/30 p-4 border-t flex justify-between items-center group-hover:bg-primary/5 transition-colors">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  Updated {product.lastUpdated}
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-              </CardFooter>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
 
           {/* Add New Placeholder Card */}
-          <Card 
-            className="border-dashed border-2 bg-transparent hover:bg-muted/20 hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-center gap-4 min-h-[280px]"
+          <Card
+            className="border-dashed border-2 border-border/60 bg-transparent hover:bg-muted/30 hover:border-primary/40 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 min-h-[180px]"
             onClick={() => setLocation("/onboarding")}
           >
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-              <Plus className="w-8 h-8 text-muted-foreground" />
+            <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center">
+              <Plus className="w-5 h-5 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <h3 className="font-semibold text-lg">Add Product</h3>
-              <p className="text-sm text-muted-foreground">Create a new device profile</p>
+              <p className="font-medium text-sm">Add Product</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Create a new device profile</p>
             </div>
           </Card>
         </div>
