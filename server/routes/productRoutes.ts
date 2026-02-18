@@ -1,0 +1,122 @@
+import type { Express } from "express";
+import { requireAuth, getUserId, type AuthenticatedRequest } from "../middleware/auth";
+import { storage } from "../storage";
+import { insertProductSchema, updateProductSchema } from "@shared/schema";
+
+export function registerProductRoutes(app: Express): void {
+  // List user's profiles
+  app.get("/api/products", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const profiles = await storage.getProfilesByUserId(userId);
+
+      // Enrich with claim counts
+      const enriched = await Promise.all(
+        profiles.map(async (p) => {
+          const claims = await storage.getClaimsByProfileId(p.id);
+          return { ...p, claimsCount: claims.length };
+        })
+      );
+
+      res.json(enriched);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  // Get single profile with claims and rules
+  app.get("/api/products/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+      const profile = await storage.getProfileById(id);
+      if (!profile) return res.status(404).json({ error: "Product not found" });
+      if (profile.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+      const claims = await storage.getClaimsByProfileId(id);
+      const rules = await storage.getRulesByProfileId(id);
+
+      res.json({ ...profile, claims, rules });
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({ error: "Failed to fetch product" });
+    }
+  });
+
+  // Create profile + claims + rules (from onboarding wizard)
+  app.post("/api/products", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const parsed = insertProductSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
+      }
+
+      const result = await storage.createProfile(userId, parsed.data);
+      res.status(201).json({
+        ...result.profile,
+        claims: result.claims,
+        rules: result.rules,
+      });
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ error: "Failed to create product" });
+    }
+  });
+
+  // Update profile
+  app.patch("/api/products/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+      const profile = await storage.getProfileById(id);
+      if (!profile) return res.status(404).json({ error: "Product not found" });
+      if (profile.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+      const parsed = updateProductSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
+      }
+
+      const updated = await storage.updateProfile(id, parsed.data);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ error: "Failed to update product" });
+    }
+  });
+
+  // Delete profile
+  app.delete("/api/products/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+      const profile = await storage.getProfileById(id);
+      if (!profile) return res.status(404).json({ error: "Product not found" });
+      if (profile.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+      await storage.deleteProfile(id);
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+}

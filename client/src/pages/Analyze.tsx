@@ -1,14 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "wouter";
-import { 
-  Loader2, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  ArrowRight, 
+import { Link, useSearch } from "wouter";
+import {
+  Loader2,
+  AlertTriangle,
+  CheckCircle,
   RefreshCw,
-  Copy,
   Wand2,
   Upload,
   FileText,
@@ -16,80 +13,32 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
-  Search,
-  Maximize2,
-  Minimize2,
-  MoreVertical,
-  Flag,
-  Target,
-  PanelLeftClose,
   PanelRightClose,
-  PanelLeft,
   PanelRight,
   Home,
-  Menu
+  Menu,
+  Flag,
+  Target,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-type AnalysisResult = {
-  id: string;
-  original: string;
-  type: "Performance" | "Safety" | "Marketing" | "Procedural";
-  issue: string;
-  severity: "high" | "medium" | "low" | "none";
-  reason: string;
-  suggestion: string;
-  start: number;
-  end: number;
-};
-
-const MOCK_RESULTS: AnalysisResult[] = [
-  {
-    id: "1",
-    original: "Reduces procedure time by 30%.",
-    type: "Performance",
-    issue: "Unsubstantiated Claim",
-    severity: "medium",
-    reason: "Specific percentage claims require head-to-head clinical data from a pivotal trial.",
-    suggestion: "May help reduce procedure time compared to standard techniques.",
-    start: 0,
-    end: 28
-  },
-  {
-    id: "2",
-    original: "The only catheter you'll ever need.",
-    type: "Marketing",
-    issue: "Absolutes / Superlatives",
-    severity: "high",
-    reason: "Avoid 'only', 'always', 'never' unless substantiated by definitive market share data.",
-    suggestion: "Designed to be a versatile solution for diverse procedural needs.",
-    start: 35,
-    end: 70
-  },
-  {
-    id: "3",
-    original: "Zero risk of infection.",
-    type: "Safety",
-    issue: "False Safety Guarantee",
-    severity: "high",
-    reason: "No device can guarantee zero risk. Use 'Designed to minimize infection risk'.",
-    suggestion: "Designed to minimize the risk of infection.",
-    start: 80,
-    end: 103
-  }
-];
+import { useProducts } from "@/hooks/use-products";
+import { useAnalysis } from "@/hooks/use-analysis";
+import type { AnalysisResult } from "@shared/schema";
 
 export default function Analyze() {
+  const searchString = useSearch();
+  const params = new URLSearchParams(searchString);
+  const preselectedProfileId = params.get("profileId");
+
   const [step, setStep] = useState<"input" | "results">("input");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult[] | null>(null);
   const [content, setContent] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -97,8 +46,18 @@ export default function Analyze() {
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-  
+  const [selectedProfileId, setSelectedProfileId] = useState<string>(preselectedProfileId || "");
+
   const { toast } = useToast();
+  const { data: products } = useProducts();
+  const analysis = useAnalysis();
+
+  // Set first product as default if none preselected
+  useEffect(() => {
+    if (!selectedProfileId && products && products.length > 0) {
+      setSelectedProfileId(String(products[0].id));
+    }
+  }, [products, selectedProfileId]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -121,31 +80,45 @@ export default function Analyze() {
 
   const handleFiles = (file: File) => {
     setUploadedFile(file.name);
-    toast({
-      title: "File Uploaded",
-      description: `Extracting text from ${file.name}...`,
-    });
-    
-    setTimeout(() => {
-       setContent(prev => prev + (prev ? "\n\n" : "") + "Reduces procedure time by 30%. The only catheter you'll ever need. Zero risk of infection.\n\nAdditional content from the document goes here. This section discusses the safety profile and ease of use features that are critical for adoption.");
-       toast({
-          title: "Extraction Complete",
-          description: "Text extracted from document.",
-       });
-    }, 1000);
+    // Read text from file
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (text) {
+        setContent(prev => prev + (prev ? "\n\n" : "") + text);
+        toast({ title: "File Loaded", description: `Text extracted from ${file.name}.` });
+      }
+    };
+    reader.readAsText(file);
   };
 
   const handleAnalyze = () => {
-    setIsAnalyzing(true);
+    if (!selectedProfileId) {
+      toast({ title: "Select a profile", description: "Please select a product profile first.", variant: "destructive" });
+      return;
+    }
+    if (!content.trim()) {
+      toast({ title: "No content", description: "Please enter or upload content to analyze.", variant: "destructive" });
+      return;
+    }
+
     setStep("results");
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      setResults(MOCK_RESULTS);
-      toast({
-        title: "Analysis Complete",
-        description: "Found 3 potential compliance issues.",
-      });
-    }, 2000);
+    analysis.mutate(
+      { profileId: parseInt(selectedProfileId, 10), content },
+      {
+        onSuccess: (data) => {
+          setResults(data.results);
+          toast({
+            title: "Analysis Complete",
+            description: `Found ${data.summary.total} potential compliance issue${data.summary.total !== 1 ? 's' : ''}.`,
+          });
+        },
+        onError: (error) => {
+          toast({ title: "Analysis Failed", description: error.message, variant: "destructive" });
+          setStep("input");
+        },
+      }
+    );
   };
 
   const applyFix = (id: string) => {
@@ -154,10 +127,7 @@ export default function Analyze() {
       setContent(prev => prev.replace(result.original, result.suggestion));
       setResults(prev => prev?.filter(r => r.id !== id) || null);
       if (selectedIssueId === id) setSelectedIssueId(null);
-      toast({
-        title: "Fix Applied",
-        description: "Content updated with suggested wording.",
-      });
+      toast({ title: "Fix Applied", description: "Content updated with suggested wording." });
     }
   };
 
@@ -166,11 +136,13 @@ export default function Analyze() {
      setResults(null);
      setContent("");
      setUploadedFile(null);
-  }
+  };
+
+  const selectedProfileName = products?.find(p => String(p.id) === selectedProfileId)?.name || "Select Profile";
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
-      
+
       {/* Top Bar */}
       <div className="h-12 border-b border-border/60 bg-card px-4 flex items-center justify-between shrink-0 z-20">
         <div className="flex items-center gap-3">
@@ -183,13 +155,17 @@ export default function Analyze() {
           <div className="flex items-center gap-2">
              <span className="font-medium text-sm">Analysis</span>
              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-             <Select defaultValue="cardioflow">
-              <SelectTrigger className="w-[150px] h-7 text-xs bg-muted/40 border-0 focus:ring-0">
+             <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+              <SelectTrigger className="w-[180px] h-7 text-xs bg-muted/40 border-0 focus:ring-0">
                 <SelectValue placeholder="Select Profile" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="cardioflow">CardioFlow X1</SelectItem>
-                <SelectItem value="neurostim">NeuroStim Pro</SelectItem>
+                {products?.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                ))}
+                {(!products || products.length === 0) && (
+                  <SelectItem value="" disabled>No profiles yet</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -201,9 +177,6 @@ export default function Analyze() {
                  <RefreshCw className="mr-1.5 h-3 w-3" /> New Analysis
               </Button>
            )}
-           <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-medium text-secondary-foreground">
-              JD
-           </div>
         </div>
       </div>
 
@@ -245,7 +218,7 @@ export default function Analyze() {
                   />
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setContent("")}>Clear</Button>
-                    <Button onClick={handleAnalyze} className="btn-soft-primary" size="sm">
+                    <Button onClick={handleAnalyze} className="btn-soft-primary" size="sm" disabled={!selectedProfileId}>
                       <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Analyze Content
                     </Button>
                   </div>
@@ -261,7 +234,7 @@ export default function Analyze() {
                   </div>
                   <h3 className="text-lg font-semibold tracking-tight">Upload Content</h3>
                   <p className="text-muted-foreground text-sm mt-1 mb-5">
-                    Drag & drop PDF, DOCX, or PPTX
+                    Drag & drop a text file or paste content directly
                   </p>
                   <div className="flex flex-col gap-2.5 w-full max-w-[240px]">
                     <div className="relative">
@@ -270,7 +243,7 @@ export default function Analyze() {
                         type="file"
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         onChange={(e) => e.target.files && e.target.files[0] && handleFiles(e.target.files[0])}
-                        accept=".pdf,.doc,.docx,.ppt,.pptx,.txt"
+                        accept=".txt,.csv,.md"
                       />
                     </div>
                     <div className="relative flex items-center">
@@ -287,7 +260,7 @@ export default function Analyze() {
       ) : (
           /* ================= RESULTS MODE (FULL SCREEN) ================= */
           <div className="flex-1 flex overflow-hidden">
-             
+
              {/* Left Sidebar */}
              <motion.div
                 animate={{ width: leftSidebarOpen ? 240 : 44 }}
@@ -356,14 +329,14 @@ export default function Analyze() {
              <div className="flex-1 bg-muted/5 relative overflow-hidden flex flex-col">
                 <div className="w-full h-full overflow-y-auto px-4 py-4">
                    <div className="mx-auto min-h-[900px] bg-white rounded-md shadow-sm border border-border/60 p-10 relative">
-                      {isAnalyzing && (
+                      {analysis.isPending && (
                          <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center">
                             <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
                             <p className="text-lg font-medium text-foreground">Analyzing Content...</p>
-                            <p className="text-muted-foreground">Checking claims against CardioFlow X1 profile</p>
+                            <p className="text-muted-foreground">Checking claims against {selectedProfileName}</p>
                          </div>
                       )}
-                      <Textarea 
+                      <Textarea
                          value={content}
                          onChange={(e) => setContent(e.target.value)}
                          className="w-full h-full min-h-[800px] resize-none border-0 focus-visible:ring-0 p-0 text-lg leading-loose text-foreground font-serif"
@@ -399,7 +372,7 @@ export default function Analyze() {
                        </Button>
                    </div>
                 </div>
-                
+
                 <ScrollArea className="flex-1 p-2 min-w-[300px]">
                    <div className="space-y-2 pb-16">
                       {results?.map((result) => (
@@ -466,7 +439,7 @@ export default function Analyze() {
                             </Card>
                          </motion.div>
                       ))}
-                      {results?.length === 0 && !isAnalyzing && (
+                      {results?.length === 0 && !analysis.isPending && (
                          <div className="text-center py-8 text-muted-foreground">
                             <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
                             <p className="text-sm">No issues found.</p>
