@@ -156,3 +156,25 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+
+// Seed a default product profile so the app is immediately usable after server restart
+storage.createProfile("dev-user", {
+  name: "CardioFlow X1",
+  deviceType: "implant",
+  oneLiner: "Next-generation cardiac catheter system for minimally invasive coronary interventions.",
+  ifuText: "The CardioFlow X1 Catheter System is indicated for use in percutaneous coronary interventions (PCI) including balloon angioplasty and stent delivery in adult patients with coronary artery disease. The device is intended for use by trained interventional cardiologists in a catheterization laboratory setting.",
+  populationText: "Adult patients (18+) undergoing percutaneous coronary interventions in hospital catheterization laboratories.",
+  risksText: "Contraindicated in patients with known hypersensitivity to catheter materials (polyurethane, silicone). Not indicated for use in pediatric patients. Risks include vessel perforation, dissection, thrombosis, distal embolization, and arrhythmia. Use caution in patients with severely calcified lesions or chronic total occlusions. Device should not be re-sterilized or reused.",
+  regions: ["US"],
+  claims: [
+    { claimText: "Designed to facilitate rapid lesion crossing in coronary interventions.", claimType: "efficacy", evidenceType: "clinical", reference: "" },
+    { claimText: "Low-profile catheter tip may help reduce procedural time.", claimType: "efficacy", evidenceType: "clinical", reference: "" },
+    { claimText: "Compatible with standard 6F guide catheters for broad procedural flexibility.", claimType: "feature", evidenceType: "", reference: "" },
+  ],
+  rules: [
+    { ruleText: "Avoid superlatives and absolutes (best, only, cure, 100%, guaranteed, zero risk, etc.)", isDefault: true },
+    { ruleText: "Do not imply diagnostic use if the device is only cleared for screening or decision-support.", isDefault: true },
+    { ruleText: "Do not reference populations or settings outside the cleared indications.", isDefault: true },
+    { ruleText: "Always include at least one risk/limitation statement in any asset that contains benefit claims.", isDefault: true },
+  ],
+});

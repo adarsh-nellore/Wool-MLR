@@ -19,7 +19,8 @@
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(env:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(kill:*)"
     ]
   }
 }
