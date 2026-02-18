@@ -3,9 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearch } from "wouter";
 import {
   Loader2,
-  AlertTriangle,
   CheckCircle,
-  RefreshCw,
+  Sparkles,
   Wand2,
   Upload,
   FileText,
@@ -14,59 +13,38 @@ import {
   ChevronRight,
   ChevronLeft,
   ChevronDown,
-  ChevronUp,
   PanelRightClose,
   PanelRight,
   Home,
   Menu,
-  Flag,
-  Target,
   Download,
+  RefreshCw,
+  FileType,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useProducts } from "@/hooks/use-products";
 import { useAnalysis } from "@/hooks/use-analysis";
-import type { AnalysisResult, DriftType, DriftLevel, ExposureTag } from "@shared/schema";
+import type { AnalysisResult, DriftType, ExposureTag, StoredAnalysis } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
 // ── Drift UI Constants ──
-
-const DRIFT_TYPE_COLORS: Record<DriftType, string> = {
-  "Diagnostic Drift": "bg-purple-100 text-purple-700 border-purple-200",
-  "Therapeutic Drift": "bg-rose-100 text-rose-700 border-rose-200",
-  "Preventive Drift": "bg-orange-100 text-orange-700 border-orange-200",
-  "Standalone Drift": "bg-indigo-100 text-indigo-700 border-indigo-200",
-  "Classification Escalation": "bg-red-100 text-red-700 border-red-200",
-  "Population Expansion": "bg-cyan-100 text-cyan-700 border-cyan-200",
-  "Use Environment Expansion": "bg-teal-100 text-teal-700 border-teal-200",
-  "Intended Use Redefinition": "bg-yellow-100 text-yellow-700 border-yellow-200",
-};
-
-const EXPOSURE_TAG_COLORS: Record<ExposureTag, string> = {
-  "Substantiation Exposure": "bg-slate-100 text-slate-600 border-slate-200",
-  "Liability Exposure": "bg-rose-50 text-rose-600 border-rose-200",
-  "Advertising Exposure": "bg-amber-50 text-amber-600 border-amber-200",
-};
 
 const EXPOSURE_SHORT: Record<ExposureTag, string> = {
   "Substantiation Exposure": "Substantiation",
   "Liability Exposure": "Liability",
   "Advertising Exposure": "Advertising",
-};
-
-const DRIFT_LEVEL_LABELS: Record<DriftLevel, string> = {
-  0: "Aligned",
-  1: "Amplification",
-  2: "Implied",
-  3: "Explicit",
-  4: "Class-Changing",
 };
 
 function getDriftShort(dt: DriftType): string {
@@ -80,21 +58,30 @@ type HighlightRange = {
   severity: string;
 };
 
-function getHighlightClass(severity: string, isHovered: boolean, isSelected: boolean): string {
-  if (isSelected) {
-    if (severity === 'high') return 'bg-red-300 ring-1 ring-red-400';
-    if (severity === 'medium') return 'bg-amber-300 ring-1 ring-amber-400';
-    return 'bg-blue-300 ring-1 ring-blue-400';
-  }
-  if (isHovered) {
-    if (severity === 'high') return 'bg-red-200';
-    if (severity === 'medium') return 'bg-amber-200';
-    return 'bg-blue-200';
-  }
-  if (severity === 'high') return 'bg-red-100/60';
-  if (severity === 'medium') return 'bg-amber-100/60';
-  return 'bg-blue-100/60';
+function getHighlightClass(severity: string): string {
+  if (severity === 'high') return 'highlight-high';
+  if (severity === 'medium') return 'highlight-medium';
+  return 'highlight-low';
 }
+
+// CSS for highlight states — injected once
+const HIGHLIGHT_STYLES = `
+  .highlight-high { background: rgba(239, 68, 68, 0.15); border-radius: 2px; cursor: pointer; transition: background 0.15s; }
+  .highlight-medium { background: rgba(245, 158, 11, 0.15); border-radius: 2px; cursor: pointer; transition: background 0.15s; }
+  .highlight-low { background: rgba(59, 130, 246, 0.15); border-radius: 2px; cursor: pointer; transition: background 0.15s; }
+
+  .highlight-high:hover, .highlight-high[data-hovered="true"] { background: rgba(239, 68, 68, 0.35); }
+  .highlight-medium:hover, .highlight-medium[data-hovered="true"] { background: rgba(245, 158, 11, 0.35); }
+  .highlight-low:hover, .highlight-low[data-hovered="true"] { background: rgba(59, 130, 246, 0.35); }
+
+  .highlight-high[data-selected="true"] { background: rgba(239, 68, 68, 0.5); box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.6); }
+  .highlight-medium[data-selected="true"] { background: rgba(245, 158, 11, 0.5); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.6); }
+  .highlight-low[data-selected="true"] { background: rgba(59, 130, 246, 0.5); box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.6); }
+
+  [contenteditable="true"]:focus { outline: none; }
+  [contenteditable="true"] h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+  [contenteditable="true"] p { margin-bottom: 1rem; font-size: 1.125rem; line-height: 1.75; font-family: Georgia, serif; }
+`;
 
 function isHeadingLine(line: string): boolean {
   const trimmed = line.trim();
@@ -109,6 +96,7 @@ export default function Analyze() {
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
   const preselectedProfileId = params.get("profileId");
+  const analysisIdParam = params.get("analysisId");
 
   const [step, setStep] = useState<"input" | "results">("input");
   const [results, setResults] = useState<AnalysisResult[] | null>(null);
@@ -121,13 +109,44 @@ export default function Analyze() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [selectedProfileId, setSelectedProfileId] = useState<string>(preselectedProfileId || "");
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(null);
-  const [summaryOpen, setSummaryOpen] = useState(true);
+  const [severityFilter, setSeverityFilter] = useState<"all" | "high" | "medium" | "low">("all");
 
   const documentRef = useRef<HTMLDivElement>(null);
+  const editableRef = useRef<HTMLDivElement>(null);
+  const [contentDirty, setContentDirty] = useState(false);
 
   const { toast } = useToast();
   const { data: products } = useProducts();
   const analysis = useAnalysis();
+
+  // Inject highlight CSS once
+  useEffect(() => {
+    const id = "highlight-styles";
+    if (!document.getElementById(id)) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = HIGHLIGHT_STYLES;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  // Load a stored analysis if analysisId is provided
+  useEffect(() => {
+    if (analysisIdParam) {
+      (async () => {
+        try {
+          const res = await apiRequest("GET", `/api/analyses/${analysisIdParam}`);
+          const stored: StoredAnalysis = await res.json();
+          setContent(stored.content);
+          setResults(stored.results);
+          setSelectedProfileId(String(stored.profileId));
+          setStep("results");
+        } catch {
+          toast({ title: "Error", description: "Could not load stored analysis.", variant: "destructive" });
+        }
+      })();
+    }
+  }, [analysisIdParam]);
 
   // Set first product as default if none preselected
   useEffect(() => {
@@ -293,17 +312,19 @@ export default function Analyze() {
     return nonOverlapping;
   }, [results, content]);
 
-  // Render highlighted content as React elements
-  const renderHighlightedContent = useCallback(() => {
-    if (!content) return null;
+  // Build highlighted content as an HTML string (no React state deps for hover/selection)
+  const highlightedHTML = useMemo(() => {
+    if (!content) return "";
 
-    // Build inline children for a text segment, inserting highlights
-    const buildInline = (text: string, segStart: number): React.ReactNode[] => {
+    const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    // Build inline HTML for a text segment, inserting highlight spans
+    const buildInline = (text: string, segStart: number): string => {
       const segEnd = segStart + text.length;
       const segRanges = highlightRanges.filter(
         r => r.start < segEnd && r.end > segStart
       );
-      const children: React.ReactNode[] = [];
+      let html = "";
       let cursor = 0;
 
       for (const range of segRanges) {
@@ -311,57 +332,34 @@ export default function Analyze() {
         const relEnd = Math.min(text.length, range.end - segStart);
 
         if (relStart > cursor) {
-          children.push(text.substring(cursor, relStart));
+          html += escapeHtml(text.substring(cursor, relStart));
         }
 
-        const isHovered = hoveredIssueId === range.resultId;
-        const isSelected = selectedIssueId === range.resultId;
-        const className = `rounded-sm cursor-pointer transition-colors ${getHighlightClass(range.severity, isHovered, isSelected)}`;
-
-        children.push(
-          <span
-            key={`highlight-${range.resultId}`}
-            id={`highlight-${range.resultId}`}
-            data-issue-id={range.resultId}
-            className={className}
-            onMouseEnter={() => setHoveredIssueId(range.resultId)}
-            onMouseLeave={() => setHoveredIssueId(null)}
-            onClick={() => {
-              setSelectedIssueId(range.resultId);
-              const cardEl = document.getElementById(`card-${range.resultId}`);
-              cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }}
-          >
-            {text.substring(relStart, relEnd)}
-          </span>
-        );
-
+        html += `<span id="highlight-${range.resultId}" data-issue-id="${range.resultId}" class="${getHighlightClass(range.severity)}">${escapeHtml(text.substring(relStart, relEnd))}</span>`;
         cursor = relEnd;
       }
 
       if (cursor < text.length) {
-        children.push(text.substring(cursor));
+        html += escapeHtml(text.substring(cursor));
       }
-
-      return children;
+      return html;
     };
 
-    // Interleave text children with <br /> for single newlines
-    const renderWithBreaks = (text: string, segStart: number): React.ReactNode[] => {
+    const renderWithBreaks = (text: string, segStart: number): string => {
       const lines = text.split('\n');
-      const result: React.ReactNode[] = [];
+      let html = "";
       let offset = segStart;
       for (let i = 0; i < lines.length; i++) {
-        if (i > 0) result.push(<br key={`br-${offset}`} />);
-        result.push(...buildInline(lines[i], offset));
-        offset += lines[i].length + 1; // +1 for the \n
+        if (i > 0) html += "<br/>";
+        html += buildInline(lines[i], offset);
+        offset += lines[i].length + 1;
       }
-      return result;
+      return html;
     };
 
     const paragraphs = content.split('\n\n');
     let globalOffset = 0;
-    const elements: React.ReactNode[] = [];
+    let html = "";
 
     for (let pIdx = 0; pIdx < paragraphs.length; pIdx++) {
       const para = paragraphs[pIdx];
@@ -372,50 +370,21 @@ export default function Analyze() {
       const heading = isHeadingLine(firstLine);
 
       if (heading) {
-        // Render heading as <h3>
-        elements.push(
-          <h3
-            key={`heading-${pIdx}`}
-            id={`section-${pIdx}`}
-            className="text-xl font-semibold mt-6 mb-2"
-          >
-            {buildInline(lines[0], paraStart)}
-          </h3>
-        );
-
-        // Render the rest of the block as a body paragraph
+        html += `<h3 id="section-${pIdx}">${buildInline(lines[0], paraStart)}</h3>`;
         if (lines.length > 1) {
           const restText = lines.slice(1).join('\n');
           const restOffset = paraStart + lines[0].length + 1;
-          elements.push(
-            <p
-              key={`section-body-${pIdx}`}
-              className="mb-4 text-lg leading-relaxed"
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
-              {renderWithBreaks(restText, restOffset)}
-            </p>
-          );
+          html += `<p>${renderWithBreaks(restText, restOffset)}</p>`;
         }
       } else {
-        // Plain paragraph — preserve single \n as <br />
-        elements.push(
-          <p
-            key={`section-${pIdx}`}
-            id={`section-${pIdx}`}
-            className="mb-4 text-lg leading-relaxed"
-            style={{ fontFamily: 'Georgia, serif' }}
-          >
-            {renderWithBreaks(para, paraStart)}
-          </p>
-        );
+        html += `<p id="section-${pIdx}">${renderWithBreaks(para, paraStart)}</p>`;
       }
 
-      globalOffset = paraStart + para.length + 2; // +2 for \n\n
+      globalOffset = paraStart + para.length + 2;
     }
 
-    return elements;
-  }, [content, highlightRanges, hoveredIssueId, selectedIssueId]);
+    return html;
+  }, [content, highlightRanges]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -495,16 +464,44 @@ export default function Analyze() {
      setContent("");
      setUploadedFile(null);
      setActiveSectionIndex(null);
+     setContentDirty(false);
   };
 
-  const handleExport = () => {
-    const blob = new Blob([content], { type: 'text/plain' });
+  const downloadFile = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'analyzed-document.txt';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExportTxt = () => {
+    downloadFile(new Blob([content], { type: 'text/plain' }), 'analyzed-document.txt');
+  };
+
+  const handleExportPdf = () => {
+    // Build a styled HTML document and use the browser's print-to-PDF
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Analyzed Document</title>
+      <style>body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 20px;line-height:1.8;color:#1a1a1a}
+      h3{font-size:1.25rem;font-weight:600;margin-top:1.5rem;margin-bottom:0.5rem}p{margin-bottom:1rem;font-size:1rem}</style>
+      </head><body>${highlightedHTML.replace(/class="highlight-[^"]*"/g, '')}</body></html>`;
+    const w = window.open('', '_blank');
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => { w.print(); }, 300);
+    }
+  };
+
+  const handleExportDocx = () => {
+    // Build a simple .doc-compatible HTML file (opens in Word)
+    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+      <head><meta charset="utf-8"/><style>body{font-family:Georgia,serif;line-height:1.8;color:#1a1a1a}
+      h3{font-size:16pt;font-weight:bold;margin-top:12pt}p{font-size:12pt;margin-bottom:8pt}</style></head>
+      <body>${highlightedHTML.replace(/class="highlight-[^"]*"/g, '')}</body></html>`;
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    downloadFile(blob, 'analyzed-document.doc');
   };
 
   const scrollToSection = (index: number) => {
@@ -525,7 +522,43 @@ export default function Analyze() {
     highlightEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  // Update highlight data attributes via DOM (avoids re-render of contentEditable)
+  useEffect(() => {
+    const container = editableRef.current;
+    if (!container) return;
+    container.querySelectorAll("[data-selected]").forEach(el => el.removeAttribute("data-selected"));
+    if (selectedIssueId) {
+      const el = container.querySelector(`[data-issue-id="${selectedIssueId}"]`);
+      el?.setAttribute("data-selected", "true");
+    }
+  }, [selectedIssueId]);
+
+  useEffect(() => {
+    const container = editableRef.current;
+    if (!container) return;
+    container.querySelectorAll("[data-hovered]").forEach(el => el.removeAttribute("data-hovered"));
+    if (hoveredIssueId) {
+      const el = container.querySelector(`[data-issue-id="${hoveredIssueId}"]`);
+      el?.setAttribute("data-hovered", "true");
+    }
+  }, [hoveredIssueId]);
+
   const selectedProfileName = products?.find(p => String(p.id) === selectedProfileId)?.name || "Select Profile";
+
+  const filteredResults = useMemo(() => {
+    if (!results) return null;
+    if (severityFilter === "all") return results;
+    return results.filter(r => r.severity === severityFilter);
+  }, [results, severityFilter]);
+
+  const severityCounts = useMemo(() => {
+    if (!results) return { high: 0, medium: 0, low: 0 };
+    return {
+      high: results.filter(r => r.severity === 'high').length,
+      medium: results.filter(r => r.severity === 'medium').length,
+      low: results.filter(r => r.severity === 'low').length,
+    };
+  }, [results]);
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
@@ -561,9 +594,29 @@ export default function Analyze() {
         <div className="flex items-center gap-2">
            {step === "results" && (
               <>
-                <Button variant="outline" size="sm" onClick={handleExport} className="h-7 text-xs">
-                   <Download className="mr-1.5 h-3 w-3" /> Download
-                </Button>
+                {contentDirty && (
+                  <Button size="sm" className="h-7 text-xs btn-soft-primary" onClick={() => { setContentDirty(false); handleAnalyze(); }}>
+                    <Wand2 className="mr-1.5 h-3 w-3" /> Re-analyze
+                  </Button>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Download className="mr-1.5 h-3 w-3" /> Download <ChevronDown className="ml-1 h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportTxt}>
+                      <FileText className="mr-2 h-3.5 w-3.5" /> Plain Text (.txt)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportPdf}>
+                      <FileType className="mr-2 h-3.5 w-3.5" /> PDF (.pdf)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportDocx}>
+                      <File className="mr-2 h-3.5 w-3.5" /> Word (.doc)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={resetAnalysis} className="h-7 text-xs">
                    <RefreshCw className="mr-1.5 h-3 w-3" /> New Analysis
                 </Button>
@@ -602,11 +655,18 @@ export default function Analyze() {
                       </Badge>
                     )}
                   </div>
-                  <Textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="flex-1 resize-none p-6 text-base leading-relaxed bg-card border rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20"
-                    placeholder="Paste text here..."
+                  <div
+                    contentEditable
+                    suppressContentEditableWarning
+                    className="flex-1 p-6 text-lg leading-relaxed bg-card border rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 overflow-y-auto focus:outline-none"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                    dangerouslySetInnerHTML={{ __html: highlightedHTML }}
+                    onBlur={(e) => {
+                      const newText = e.currentTarget.innerText.trim();
+                      if (newText !== content.trim()) {
+                        setContent(newText);
+                      }
+                    }}
                   />
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setContent("")}>Clear</Button>
@@ -643,7 +703,7 @@ export default function Analyze() {
                       <span className="px-2 text-[10px] text-muted-foreground uppercase">or</span>
                       <div className="grow border-t border-border"></div>
                     </div>
-                    <Button onClick={() => setContent(" ")} variant="outline" size="sm">Paste Text</Button>
+                    <Button onClick={() => setContent("\u200B")} variant="outline" size="sm">Paste Text</Button>
                   </div>
                 </motion.div>
               )}
@@ -719,76 +779,6 @@ export default function Analyze() {
              {/* Center: Document Viewer */}
              <div className="flex-1 bg-muted/5 relative overflow-hidden flex flex-col">
                 <div ref={documentRef} className="w-full h-full overflow-y-auto px-4 py-4">
-                   {/* Collapsible Summary Banner */}
-                   {results && (
-                     <div className="mx-auto mb-3">
-                       <div className="bg-card border rounded-lg px-4 py-2.5">
-                         <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-3">
-                             <Badge variant="secondary" className="h-6 text-xs font-semibold">
-                               {results.length} {results.length === 1 ? 'Issue' : 'Issues'}
-                             </Badge>
-                             <AnimatePresence>
-                               {summaryOpen && (
-                                 <motion.div
-                                   initial={{ opacity: 0, width: 0 }}
-                                   animate={{ opacity: 1, width: 'auto' }}
-                                   exit={{ opacity: 0, width: 0 }}
-                                   className="flex items-center gap-2 overflow-hidden"
-                                 >
-                                   <Badge variant="outline" className="h-5 text-[11px] text-destructive border-destructive/20 bg-destructive/5">
-                                     {results.filter(r => r.severity === 'high').length} High
-                                   </Badge>
-                                   <Badge variant="outline" className="h-5 text-[11px] text-amber-600 border-amber-200 bg-amber-50">
-                                     {results.filter(r => r.severity === 'medium').length} Medium
-                                   </Badge>
-                                   <Badge variant="outline" className="h-5 text-[11px] text-blue-600 border-blue-200 bg-blue-50">
-                                     {results.filter(r => r.severity === 'low').length} Low
-                                   </Badge>
-                                   <Separator orientation="vertical" className="h-4" />
-                                   <span className="text-xs text-muted-foreground">{selectedProfileName}</span>
-                                 </motion.div>
-                               )}
-                             </AnimatePresence>
-                             <AnimatePresence>
-                               {summaryOpen && results && (
-                                 <motion.div
-                                   initial={{ opacity: 0, width: 0 }}
-                                   animate={{ opacity: 1, width: 'auto' }}
-                                   exit={{ opacity: 0, width: 0 }}
-                                   className="flex items-center gap-1.5 overflow-hidden"
-                                 >
-                                   <Separator orientation="vertical" className="h-4" />
-                                   {([0, 1, 2, 3, 4] as DriftLevel[]).map(level => {
-                                     const count = results.filter(r => r.driftLevel === level).length;
-                                     if (count === 0) return null;
-                                     return (
-                                       <Badge key={level} variant="outline" className={`h-5 text-[10px] font-mono ${
-                                         level >= 3 ? 'text-red-600 border-red-200 bg-red-50' :
-                                         level === 2 ? 'text-amber-600 border-amber-200 bg-amber-50' :
-                                         'text-gray-500 border-gray-200 bg-gray-50'
-                                       }`}>
-                                         L{level}: {count}
-                                       </Badge>
-                                     );
-                                   })}
-                                 </motion.div>
-                               )}
-                             </AnimatePresence>
-                           </div>
-                           <Button
-                             variant="ghost"
-                             size="icon"
-                             className="h-6 w-6 text-muted-foreground"
-                             onClick={() => setSummaryOpen(!summaryOpen)}
-                           >
-                             {summaryOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                           </Button>
-                         </div>
-                       </div>
-                     </div>
-                   )}
-
                    <div className="mx-auto min-h-[900px] bg-white rounded-md shadow-sm border border-border/60 p-10 relative">
                       {analysis.isPending && (
                          <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center">
@@ -797,19 +787,43 @@ export default function Analyze() {
                             <p className="text-muted-foreground">Checking claims against {selectedProfileName}</p>
                          </div>
                       )}
-                      {results ? (
-                        <div className="text-foreground">
-                          {renderHighlightedContent()}
-                        </div>
-                      ) : (
-                        <Textarea
-                           value={content}
-                           onChange={(e) => setContent(e.target.value)}
-                           className="w-full h-full min-h-[800px] resize-none border-0 focus-visible:ring-0 p-0 text-lg leading-loose text-foreground font-serif"
-                           placeholder="Document content..."
-                           style={{ fontFamily: 'Georgia, serif' }}
-                        />
-                      )}
+                      <div
+                        ref={editableRef}
+                        contentEditable
+                        suppressContentEditableWarning
+                        className="text-foreground min-h-[800px] focus:outline-none"
+                        dangerouslySetInnerHTML={{ __html: highlightedHTML || '<p style="font-family: Georgia, serif; font-size: 1.125rem; line-height: 1.75; color: #a1a1aa;">Paste or type your content here...</p>' }}
+                        onBlur={(e) => {
+                          const newText = e.currentTarget.innerText.trim();
+                          if (newText !== content.trim()) {
+                            setContent(newText);
+                            if (results) setContentDirty(true);
+                          }
+                        }}
+                        onClick={(e) => {
+                          // Event delegation for highlight clicks
+                          const target = (e.target as HTMLElement).closest("[data-issue-id]");
+                          if (target) {
+                            const issueId = target.getAttribute("data-issue-id");
+                            if (issueId) {
+                              setSelectedIssueId(issueId);
+                              const cardEl = document.getElementById(`card-${issueId}`);
+                              cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                          }
+                        }}
+                        onMouseOver={(e) => {
+                          const target = (e.target as HTMLElement).closest("[data-issue-id]");
+                          if (target) {
+                            const issueId = target.getAttribute("data-issue-id");
+                            if (issueId) setHoveredIssueId(issueId);
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          const target = (e.target as HTMLElement).closest("[data-issue-id]");
+                          if (target) setHoveredIssueId(null);
+                        }}
+                      />
                    </div>
                 </div>
              </div>
@@ -830,118 +844,152 @@ export default function Analyze() {
                    </Button>
                 </div>
 
-                <div className="px-3 py-2 border-b border-border/60 h-10 flex items-center justify-between min-w-[300px]">
-                   <span className="font-medium text-sm">Findings</span>
-                   <div className="flex items-center gap-1.5">
-                       <Badge variant="outline" className="text-[11px] h-5">{results?.length || 0}</Badge>
-                       <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => setRightSidebarOpen(false)}>
-                           <PanelRightClose className="h-3.5 w-3.5" />
-                       </Button>
+                <div className="border-b border-border/60 min-w-[300px]">
+                   <div className="px-3 py-2 flex items-center justify-between">
+                      <span className="font-medium text-sm">Findings</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => setRightSidebarOpen(false)}>
+                          <PanelRightClose className="h-3.5 w-3.5" />
+                      </Button>
                    </div>
+                   {results && results.length > 0 && (
+                      <div className="px-2 pb-2 flex items-center gap-1">
+                         <button
+                            className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
+                            onClick={() => setSeverityFilter('all')}
+                         >
+                            All {results.length}
+                         </button>
+                         {severityCounts.high > 0 && (
+                            <button
+                               className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'high' ? 'bg-red-100 text-red-700' : 'text-red-500/70 hover:text-red-700 hover:bg-red-50'}`}
+                               onClick={() => setSeverityFilter(severityFilter === 'high' ? 'all' : 'high')}
+                            >
+                               {severityCounts.high} High
+                            </button>
+                         )}
+                         {severityCounts.medium > 0 && (
+                            <button
+                               className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'medium' ? 'bg-amber-100 text-amber-700' : 'text-amber-500/70 hover:text-amber-700 hover:bg-amber-50'}`}
+                               onClick={() => setSeverityFilter(severityFilter === 'medium' ? 'all' : 'medium')}
+                            >
+                               {severityCounts.medium} Med
+                            </button>
+                         )}
+                         {severityCounts.low > 0 && (
+                            <button
+                               className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'low' ? 'bg-blue-100 text-blue-700' : 'text-blue-500/70 hover:text-blue-700 hover:bg-blue-50'}`}
+                               onClick={() => setSeverityFilter(severityFilter === 'low' ? 'all' : 'low')}
+                            >
+                               {severityCounts.low} Low
+                            </button>
+                         )}
+                      </div>
+                   )}
                 </div>
 
                 <ScrollArea className="flex-1 p-2 min-w-[300px]">
-                   <div className="space-y-2 pb-16">
-                      {results?.map((result) => (
-                         <motion.div
-                            key={result.id}
-                            id={`card-${result.id}`}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, height: 0 }}
-                            layout
-                         >
-                            <Card
-                               className={`border-l-[3px] cursor-pointer transition-all ${
-                                  selectedIssueId === result.id ? 'ring-1 ring-primary ring-offset-1' : ''
-                               } ${
-                                  hoveredIssueId === result.id && selectedIssueId !== result.id ? 'ring-1 ring-muted-foreground/30' : ''
-                               } ${
-                                  result.severity === 'high' ? 'border-l-destructive' :
-                                  result.severity === 'medium' ? 'border-l-amber-500' :
-                                  'border-l-blue-500'
-                               }`}
-                               onClick={() => handleSelectIssue(result.id)}
-                               onMouseEnter={() => setHoveredIssueId(result.id)}
-                               onMouseLeave={() => setHoveredIssueId(null)}
-                            >
-                               <CardContent className="p-2.5 space-y-1.5">
-                                  <div className="flex items-center justify-between">
-                                     <Badge variant="outline" className={`text-[11px] h-5 ${
-                                        result.severity === 'high' ? 'text-destructive border-destructive/20 bg-destructive/5' :
-                                        'text-amber-600 border-amber-200 bg-amber-50'
-                                     }`}>
-                                        {result.issue}
-                                     </Badge>
-                                     <span className="text-[10px] text-muted-foreground uppercase">{getDriftShort(result.driftType) || result.type}</span>
-                                  </div>
+                   <div className="space-y-1.5 pb-16">
+                      {filteredResults?.map((result) => {
+                         const isExpanded = selectedIssueId === result.id || hoveredIssueId === result.id;
+                         const severityColor = result.severity === 'high' ? 'border-l-red-500' : result.severity === 'medium' ? 'border-l-amber-400' : 'border-l-blue-400';
+                         const severityDot = result.severity === 'high' ? 'bg-red-500' : result.severity === 'medium' ? 'bg-amber-400' : 'bg-blue-400';
 
-                                  {/* Drift & Exposure pills */}
-                                  <div className="flex items-center gap-1 flex-wrap">
-                                     <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium border ${DRIFT_TYPE_COLORS[result.driftType] || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                        {result.driftType}
-                                     </span>
-                                     <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-bold ${
-                                        result.driftLevel >= 3 ? 'bg-red-100 text-red-700' :
-                                        result.driftLevel === 2 ? 'bg-amber-100 text-amber-700' :
-                                        'bg-gray-100 text-gray-500'
-                                     }`}>
-                                        L{result.driftLevel}
-                                     </span>
-                                     {result.exposureTags?.map(tag => (
-                                        <span key={tag} className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] border ${EXPOSURE_TAG_COLORS[tag] || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                                           {EXPOSURE_SHORT[tag] || tag}
-                                        </span>
-                                     ))}
-                                  </div>
+                         return (
+                           <motion.div
+                              key={result.id}
+                              id={`card-${result.id}`}
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              layout
+                           >
+                              <div
+                                 className={`border-l-[3px] ${severityColor} rounded-md bg-background border border-border/50 cursor-pointer transition-all hover:shadow-sm ${
+                                    selectedIssueId === result.id ? 'shadow-sm ring-1 ring-primary/30' : ''
+                                 }`}
+                                 onClick={() => handleSelectIssue(result.id)}
+                                 onMouseEnter={() => setHoveredIssueId(result.id)}
+                                 onMouseLeave={() => setHoveredIssueId(null)}
+                              >
+                                 {/* Collapsed: severity dot + issue label + snippet */}
+                                 <div className="px-3 py-2">
+                                    <div className="flex items-center gap-2 mb-1">
+                                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${severityDot}`} />
+                                       <span className="text-xs font-medium text-foreground truncate">{result.issue}</span>
+                                       <span className="text-[10px] text-muted-foreground ml-auto shrink-0">L{result.driftLevel}</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 pl-3.5">
+                                       {result.original}
+                                    </p>
+                                 </div>
 
-                                  <div className="bg-muted/30 px-2 py-1 rounded text-[11px] italic border-l-2 border-muted-foreground/20 text-muted-foreground leading-relaxed">
-                                     "{result.original}"
-                                  </div>
+                                 {/* Expanded: reason, tags, suggestion, fix */}
+                                 <AnimatePresence>
+                                    {isExpanded && (
+                                       <motion.div
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: 'auto', opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.15 }}
+                                          className="overflow-hidden"
+                                       >
+                                          <div className="px-3 pb-2.5 space-y-2 border-t border-border/40 pt-2">
+                                             {/* Reason */}
+                                             <p className="text-xs text-foreground/80 leading-relaxed">
+                                                {result.reason}
+                                             </p>
 
-                                  <p className="text-[11px] text-foreground leading-relaxed">
-                                     {result.reason}
-                                  </p>
+                                             {/* Compact metadata row */}
+                                             <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[10px] text-muted-foreground">{getDriftShort(result.driftType)}</span>
+                                                {result.exposureTags?.length > 0 && (
+                                                   <>
+                                                      <span className="text-border">·</span>
+                                                      {result.exposureTags.map(tag => (
+                                                         <span key={tag} className="text-[10px] text-muted-foreground">
+                                                            {EXPOSURE_SHORT[tag]}
+                                                         </span>
+                                                      ))}
+                                                   </>
+                                                )}
+                                             </div>
 
-                                  {result.boundaryReference && (
-                                     <div className="border-l-2 border-primary/30 pl-2">
-                                        <p className="text-[10px] italic text-muted-foreground leading-relaxed">
-                                           {result.boundaryReference}
-                                        </p>
-                                     </div>
-                                  )}
-
-                                  {selectedIssueId === result.id && (
-                                     <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        className="pt-1"
-                                     >
-                                        <div className="bg-green-50 border border-green-100 rounded p-2 mb-2">
-                                           <div className="flex items-center gap-1.5 mb-0.5">
-                                              <CheckCircle className="w-3 h-3 text-green-600" />
-                                              <span className="text-[10px] font-semibold text-green-700 uppercase">Suggestion</span>
-                                           </div>
-                                           <p className="text-xs text-green-800 font-medium leading-relaxed">"{result.suggestion}"</p>
-                                        </div>
-                                        <Button
-                                           size="sm"
-                                           className="w-full btn-soft-primary h-7 text-xs"
-                                           onClick={(e) => { e.stopPropagation(); applyFix(result.id); }}
-                                        >
-                                           <RefreshCw className="w-3 h-3 mr-1.5" />
-                                           Apply Fix
-                                        </Button>
-                                     </motion.div>
-                                  )}
-                               </CardContent>
-                            </Card>
-                         </motion.div>
-                      ))}
-                      {results?.length === 0 && !analysis.isPending && (
+                                             {/* Suggestion + Apply Fix */}
+                                             {result.suggestion && (
+                                                <div className="space-y-2">
+                                                   <p className="text-[11px] text-foreground/70 leading-relaxed bg-muted/30 rounded px-2.5 py-1.5">
+                                                      {result.suggestion}
+                                                   </p>
+                                                   <Button
+                                                      size="sm"
+                                                      className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                                      onClick={(e) => { e.stopPropagation(); applyFix(result.id); }}
+                                                   >
+                                                      <Sparkles className="w-3 h-3 mr-1.5" />
+                                                      Apply AI Fix
+                                                   </Button>
+                                                </div>
+                                             )}
+                                          </div>
+                                       </motion.div>
+                                    )}
+                                 </AnimatePresence>
+                              </div>
+                           </motion.div>
+                         );
+                      })}
+                      {filteredResults?.length === 0 && !analysis.isPending && (
                          <div className="text-center py-8 text-muted-foreground">
-                            <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                            <p className="text-sm">No issues found.</p>
+                            {results && results.length > 0 ? (
+                              <>
+                                <p className="text-sm">No {severityFilter} issues.</p>
+                                <button className="text-xs text-primary mt-1" onClick={() => setSeverityFilter('all')}>Show all</button>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                                <p className="text-sm">No issues found.</p>
+                              </>
+                            )}
                          </div>
                       )}
                    </div>

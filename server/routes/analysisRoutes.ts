@@ -38,6 +38,10 @@ export function registerAnalysisRoutes(app: Express): void {
       // Run analysis
       const result = await analyzeContent(profile, claims, rules, content);
       console.log(`[analyze route] Analysis complete: ${result.summary.total} issues found`);
+
+      // Persist analysis under this device profile
+      await storage.saveAnalysis(profileId, content, result);
+
       res.json(result);
     } catch (error: any) {
       console.error("[analysis route] Error:", error?.message || error);

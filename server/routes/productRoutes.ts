@@ -98,6 +98,45 @@ export function registerProductRoutes(app: Express): void {
     }
   });
 
+  // List analyses for a profile
+  app.get("/api/products/:id/analyses", async (req: Request, res) => {
+    try {
+      const userId = getUserId(req);
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+      const profile = await storage.getProfileById(id);
+      if (!profile) return res.status(404).json({ error: "Product not found" });
+      if (profile.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+      const analyses = await storage.getAnalysesByProfileId(id);
+      res.json(analyses);
+    } catch (error) {
+      console.error("Error fetching analyses:", error);
+      res.status(500).json({ error: "Failed to fetch analyses" });
+    }
+  });
+
+  // Get a single stored analysis
+  app.get("/api/analyses/:id", async (req: Request, res) => {
+    try {
+      const userId = getUserId(req);
+      const id = parseInt(String(req.params.id), 10);
+      if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+      const analysis = await storage.getAnalysisById(id);
+      if (!analysis) return res.status(404).json({ error: "Analysis not found" });
+
+      const profile = await storage.getProfileById(analysis.profileId);
+      if (!profile || profile.userId !== userId) return res.status(403).json({ error: "Forbidden" });
+
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error fetching analysis:", error);
+      res.status(500).json({ error: "Failed to fetch analysis" });
+    }
+  });
+
   // Delete profile
   app.delete("/api/products/:id", async (req: Request, res) => {
     try {

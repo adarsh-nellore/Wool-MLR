@@ -4,6 +4,8 @@ import type {
   CoreClaim,
   PromoRule,
   InsertProduct,
+  StoredAnalysis,
+  AnalysisResponse,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -23,6 +25,11 @@ export interface IStorage {
 
   // Rule ops
   getRulesByProfileId(profileId: number): Promise<PromoRule[]>;
+
+  // Analysis ops
+  saveAnalysis(profileId: number, content: string, response: AnalysisResponse): Promise<StoredAnalysis>;
+  getAnalysesByProfileId(profileId: number): Promise<StoredAnalysis[]>;
+  getAnalysisById(id: number): Promise<StoredAnalysis | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -33,6 +40,8 @@ export class MemStorage implements IStorage {
   private nextProfileId = 1;
   private nextClaimId = 1;
   private nextRuleId = 1;
+  private analyses = new Map<number, StoredAnalysis>();
+  private nextAnalysisId = 1;
 
   // ── Users ──
   async getUser(id: string): Promise<User | undefined> {
@@ -141,6 +150,9 @@ export class MemStorage implements IStorage {
     Array.from(this.rules.entries()).forEach(([ruleId, rule]) => {
       if (rule.profileId === id) this.rules.delete(ruleId);
     });
+    Array.from(this.analyses.entries()).forEach(([analysisId, analysis]) => {
+      if (analysis.profileId === id) this.analyses.delete(analysisId);
+    });
     return true;
   }
 
@@ -152,6 +164,30 @@ export class MemStorage implements IStorage {
   // ── Rules ──
   async getRulesByProfileId(profileId: number): Promise<PromoRule[]> {
     return Array.from(this.rules.values()).filter(r => r.profileId === profileId);
+  }
+
+  // ── Analyses ──
+  async saveAnalysis(profileId: number, content: string, response: AnalysisResponse): Promise<StoredAnalysis> {
+    const analysis: StoredAnalysis = {
+      id: this.nextAnalysisId++,
+      profileId,
+      content,
+      results: response.results,
+      summary: response.summary,
+      createdAt: new Date(),
+    };
+    this.analyses.set(analysis.id, analysis);
+    return analysis;
+  }
+
+  async getAnalysesByProfileId(profileId: number): Promise<StoredAnalysis[]> {
+    return Array.from(this.analyses.values())
+      .filter(a => a.profileId === profileId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getAnalysisById(id: number): Promise<StoredAnalysis | undefined> {
+    return this.analyses.get(id);
   }
 }
 

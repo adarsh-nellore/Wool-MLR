@@ -130,3 +130,14 @@ export interface AnalysisResponse {
     driftLevels: { level: DriftLevel; count: number }[];
   };
 }
+
+// ── Stored Analysis (persisted per device) ──
+
+export interface StoredAnalysis {
+  id: number;
+  profileId: number;
+  content: string;
+  results: AnalysisResult[];
+  summary: AnalysisResponse["summary"];
+  createdAt: Date;
+}

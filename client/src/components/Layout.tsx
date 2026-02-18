@@ -32,9 +32,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Link href="/" className={`text-sm px-3 py-1.5 rounded-md transition-colors ${location === "/" ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}>
                 Dashboard
               </Link>
-              <Link href="/onboarding" className={`text-sm px-3 py-1.5 rounded-md transition-colors ${location === "/onboarding" ? "text-primary bg-primary/8 font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}>
-                Profiles
-              </Link>
             </nav>
           </div>
 
