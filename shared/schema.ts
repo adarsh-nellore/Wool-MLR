@@ -45,6 +45,23 @@ export interface PromoRule {
   isDefault: boolean;
 }
 
+// ── Marketing Medium Constants ──
+
+export const MARKETING_MEDIUMS = [
+  "social_media",
+  "print_ad",
+  "website",
+  "email_campaign",
+  "trade_show",
+  "brochure",
+  "press_release",
+  "hcp_detail_aid",
+  "patient_education",
+  "other",
+] as const;
+
+export type MarketingMedium = (typeof MARKETING_MEDIUMS)[number];
+
 // ── Zod Validation Schemas ──
 
 export const insertProductSchema = z.object({
@@ -83,10 +100,12 @@ export const analyzeContentSchema = z.object({
   profileId: z.number().int().positive(),
   content: z.string().min(1),
   ephemeral: z.boolean().optional(),
+  medium: z.string().min(1).default("other"),
 });
 
 export const analyzeUploadSchema = z.object({
   profileId: z.coerce.number().int().positive(),
+  medium: z.string().min(1).default("other"),
 });
 
 // ── Boundary Drift Types ──

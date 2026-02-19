@@ -46,7 +46,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useProducts } from "@/hooks/use-products";
 import { useAnalysis, useAnalysisUpload } from "@/hooks/use-analysis";
-import type { AnalysisResult, DriftType, ExposureTag, StoredAnalysis, StoredImage, StoredDocument } from "@shared/schema";
+import type { AnalysisResult, DriftType, ExposureTag, StoredAnalysis, StoredImage, StoredDocument, MarketingMedium } from "@shared/schema";
+import { MARKETING_MEDIUMS } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import DocumentViewer from "@/components/DocumentViewer";
 import { AppHeader } from "@/components/Layout";
@@ -135,6 +136,19 @@ function isHeadingLine(line: string): boolean {
   return false;
 }
 
+const MEDIUM_LABELS: Record<MarketingMedium, string> = {
+  social_media: "Social Media Post",
+  print_ad: "Print Ad",
+  website: "Website",
+  email_campaign: "Email Campaign",
+  trade_show: "Trade Show",
+  brochure: "Brochure",
+  press_release: "Press Release",
+  hcp_detail_aid: "HCP Detail Aid",
+  patient_education: "Patient Education",
+  other: "Other",
+};
+
 export default function Analyze() {
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
@@ -154,6 +168,7 @@ export default function Analyze() {
   const [selectedProfileId, setSelectedProfileId] = useState<string>(preselectedProfileId || "");
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(null);
   const [severityFilter, setSeverityFilter] = useState<"all" | "high" | "medium" | "low">("all");
+  const [selectedMedium, setSelectedMedium] = useState<string>("other");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [extractedImages, setExtractedImages] = useState<StoredImage[]>([]);
   const [originalDocument, setOriginalDocument] = useState<StoredDocument | null>(null);
@@ -193,6 +208,7 @@ export default function Analyze() {
     if (loadSampleParam === "true" && !content && !analysisIdParam) {
       setContent(SAMPLE_DOCUMENT_TEXT);
       setUploadedFile("sample-cardioflow-promo.txt");
+      setSelectedMedium("brochure");
     }
   }, [loadSampleParam]);
 
@@ -516,7 +532,7 @@ export default function Analyze() {
     if (pendingFile) {
       // Upload file for server-side processing
       uploadAnalysis.mutate(
-        { profileId: parseInt(selectedProfileId, 10), files: [pendingFile] },
+        { profileId: parseInt(selectedProfileId, 10), files: [pendingFile], medium: selectedMedium },
         {
           onSuccess: (data) => {
             setContent(data.extractedText);
@@ -538,7 +554,7 @@ export default function Analyze() {
     } else {
       const isEphemeral = loadSampleParam === "true";
       analysis.mutate(
-        { profileId: parseInt(selectedProfileId, 10), content, ephemeral: isEphemeral || undefined },
+        { profileId: parseInt(selectedProfileId, 10), content, ephemeral: isEphemeral || undefined, medium: selectedMedium },
         {
           onSuccess: (data) => {
             setResults(data.results);
@@ -584,6 +600,7 @@ export default function Analyze() {
      setScrollToPage(null);
      setActiveSectionIndex(null);
      setContentDirty(false);
+     setSelectedMedium("other");
      initialResultsCount.current = null;
      initialWeightedScore.current = null;
   };
@@ -791,6 +808,16 @@ export default function Analyze() {
               {(!products || products.length === 0) && (
                 <SelectItem value="__none__" disabled>No profiles yet</SelectItem>
               )}
+            </SelectContent>
+          </Select>
+          <Select value={selectedMedium} onValueChange={setSelectedMedium}>
+            <SelectTrigger className="w-[160px] h-7 text-xs bg-muted/40 border-0 focus:ring-0">
+              <SelectValue placeholder="Medium" />
+            </SelectTrigger>
+            <SelectContent>
+              {MARKETING_MEDIUMS.map((m) => (
+                <SelectItem key={m} value={m}>{MEDIUM_LABELS[m]}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

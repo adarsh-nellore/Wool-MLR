@@ -4,7 +4,7 @@ import type { AnalysisResponse, StoredImage, StoredDocument } from "@shared/sche
 
 export function useAnalysis() {
   const queryClient = useQueryClient();
-  return useMutation<AnalysisResponse, Error, { profileId: number; content: string; ephemeral?: boolean }>({
+  return useMutation<AnalysisResponse, Error, { profileId: number; content: string; ephemeral?: boolean; medium?: string }>({
     mutationFn: async (data) => {
       const res = await apiRequest("POST", "/api/analyze", data);
       return res.json();
@@ -25,10 +25,13 @@ export interface UploadAnalysisResponse extends AnalysisResponse {
 
 export function useAnalysisUpload() {
   const queryClient = useQueryClient();
-  return useMutation<UploadAnalysisResponse, Error, { profileId: number; files: File[] }>({
-    mutationFn: async ({ profileId, files }) => {
+  return useMutation<UploadAnalysisResponse, Error, { profileId: number; files: File[]; medium?: string }>({
+    mutationFn: async ({ profileId, files, medium }) => {
       const formData = new FormData();
       formData.append("profileId", String(profileId));
+      if (medium) {
+        formData.append("medium", medium);
+      }
       for (const file of files) {
         formData.append("files", file);
       }

@@ -28,7 +28,7 @@ export function registerAnalysisRoutes(app: Express): void {
         return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
       }
 
-      const { profileId, content, ephemeral } = parsed.data;
+      const { profileId, content, ephemeral, medium } = parsed.data;
       console.log(`[analyze route] profileId=${profileId}, content length=${content.length}, userId=${userId}, ephemeral=${!!ephemeral}`);
 
       // Verify profile ownership
@@ -50,7 +50,7 @@ export function registerAnalysisRoutes(app: Express): void {
       console.log(`[analyze route] Claims: ${claims.length}, Rules: ${rules.length}`);
 
       // Run analysis
-      const result = await analyzeContent(profile, claims, rules, content);
+      const result = await analyzeContent(profile, claims, rules, content, undefined, undefined, medium);
       console.log(`[analyze route] Analysis complete: ${result.summary.total} issues found`);
 
       // Persist analysis under this device profile (skip for ephemeral/sample runs)
@@ -78,7 +78,7 @@ export function registerAnalysisRoutes(app: Express): void {
         return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
       }
 
-      const { profileId } = parsed.data;
+      const { profileId, medium } = parsed.data;
       const files = req.files as Express.Multer.File[];
 
       if (!files || files.length === 0) {
@@ -137,7 +137,8 @@ export function registerAnalysisRoutes(app: Express): void {
         profile, claims, rules,
         contentForAnalysis,
         allImages.length > 0 ? allImages : undefined,
-        pageTextRanges
+        pageTextRanges,
+        medium
       );
 
       console.log(`[analyze/upload route] Analysis complete: ${result.summary.total} issues found`);

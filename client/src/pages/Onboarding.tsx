@@ -29,6 +29,7 @@ const formSchema = z.object({
   deviceType: z.string().min(1, { message: "Device type is required." }),
   description: z.string().max(200, { message: "Description must be under 200 characters." }),
   indications: z.string().min(10, { message: "Indications are required." }),
+  population: z.string().min(5, { message: "Patient population is required (min 5 characters)." }),
   risks: z.string().min(10, { message: "Risks and limitations are required." }),
 });
 
@@ -52,6 +53,7 @@ const SAMPLE_DATA = {
   deviceType: "implant",
   description: "Next-generation cardiac catheter system for minimally invasive coronary interventions.",
   indications: "The CardioFlow X1 Catheter System is indicated for use in percutaneous coronary interventions (PCI) including balloon angioplasty and stent delivery in adult patients with coronary artery disease. The device is intended for use by trained interventional cardiologists in a catheterization laboratory setting.",
+  population: "Adult patients (18+) undergoing percutaneous coronary interventions in hospital catheterization laboratories.",
   risks: "Contraindicated in patients with known hypersensitivity to catheter materials (polyurethane, silicone). Not indicated for use in pediatric patients. Risks include vessel perforation, dissection, thrombosis, distal embolization, and arrhythmia. Use caution in patients with severely calcified lesions or chronic total occlusions. Device should not be re-sterilized or reused.",
   claims: [
     "Designed to facilitate rapid lesion crossing in coronary interventions.",
@@ -87,6 +89,7 @@ export default function Onboarding() {
           deviceType: SAMPLE_DATA.deviceType,
           description: SAMPLE_DATA.description,
           indications: SAMPLE_DATA.indications,
+          population: SAMPLE_DATA.population,
           risks: SAMPLE_DATA.risks,
         }
       : {
@@ -94,6 +97,7 @@ export default function Onboarding() {
           deviceType: "",
           description: "",
           indications: "",
+          population: "",
           risks: "",
         },
   });
@@ -102,7 +106,7 @@ export default function Onboarding() {
     const fields = step === 1
       ? ["productName", "deviceType", "description"]
       : step === 2
-      ? ["indications"]
+      ? ["indications", "population"]
       : step === 3
       ? ["risks"]
       : [];
@@ -150,7 +154,7 @@ export default function Onboarding() {
         deviceType: data.deviceType,
         oneLiner: data.description,
         ifuText: data.indications,
-        populationText: "",
+        populationText: data.population,
         risksText: data.risks,
         regions: [],
         claims: filteredClaims.map(c => ({ claimText: c.text })),
@@ -310,6 +314,18 @@ export default function Onboarding() {
                       />
                       {form.formState.errors.indications && (
                         <p className="text-destructive text-xs">{form.formState.errors.indications.message}</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="population" className="text-sm">Intended Patient Population</Label>
+                      <Textarea
+                        id="population"
+                        {...form.register("population")}
+                        className="min-h-[80px] font-mono text-sm"
+                        placeholder="e.g. Adult patients (18+) with coronary artery disease in hospital settings."
+                      />
+                      {form.formState.errors.population && (
+                        <p className="text-destructive text-xs">{form.formState.errors.population.message}</p>
                       )}
                     </div>
                   </div>

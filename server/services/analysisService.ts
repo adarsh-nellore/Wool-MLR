@@ -38,10 +38,43 @@ function driftLevelToSeverity(level: DriftLevel): "high" | "medium" | "low" {
   return "low";
 }
 
+const MEDIUM_LABELS: Record<string, string> = {
+  social_media: "Social Media Post",
+  print_ad: "Print Ad",
+  website: "Website",
+  email_campaign: "Email Campaign",
+  trade_show: "Trade Show",
+  brochure: "Brochure",
+  press_release: "Press Release",
+  hcp_detail_aid: "HCP Detail Aid",
+  patient_education: "Patient Education",
+  other: "Other",
+};
+
+function getMediumGuidance(medium: string): string {
+  switch (medium) {
+    case "social_media":
+      return "MEDIUM-SPECIFIC GUIDANCE: Social media posts receive heightened FDA scrutiny for fair balance. Character limits do not excuse omission of risk information. Every benefit claim must be accompanied by risk disclosures. Shared/retweeted content is considered manufacturer speech.";
+    case "patient_education":
+      return "MEDIUM-SPECIFIC GUIDANCE: Patient education materials must use plain language (6th–8th grade reading level). Avoid technical jargon unless clearly defined. All claims must be understandable by a lay audience. Implied benefits are especially risky as patients may not critically evaluate claims.";
+    case "hcp_detail_aid":
+      return "MEDIUM-SPECIFIC GUIDANCE: HCP detail aids require substantiation for every clinical claim. References to clinical data must be accurate and not misleading. Comparative claims require head-to-head data. Off-label information must not be proactively presented.";
+    case "trade_show":
+      return "MEDIUM-SPECIFIC GUIDANCE: Trade show materials risk casual language that drifts from cleared indications. Verbal claims made alongside materials are considered promotional. Ensure all booth materials, handouts, and presentations maintain regulatory compliance.";
+    case "print_ad":
+      return "MEDIUM-SPECIFIC GUIDANCE: Print advertisements must include the brief summary or adequate directions for use. Fair balance requirements apply — risk information must have comparable prominence to benefit claims.";
+    case "email_campaign":
+      return "MEDIUM-SPECIFIC GUIDANCE: Email campaigns must include fair balance within the email body, not just via links. Subject lines making benefit claims trigger fair balance requirements for the entire email.";
+    default:
+      return "";
+  }
+}
+
 function buildSystemPrompt(
   profile: ProductProfile,
   claims: CoreClaim[],
-  rules: PromoRule[]
+  rules: PromoRule[],
+  medium?: string
 ): string {
   const claimsList = claims.map((c, i) => `${i + 1}. "${c.claimText}" [type: ${c.claimType}]`).join("\n");
   const rulesList = rules.map((r, i) => `${i + 1}. ${r.ruleText}`).join("\n");
@@ -62,6 +95,9 @@ WARNINGS, RISKS & CONTRAINDICATIONS:
 ${profile.risksText}
 
 ${profile.populationText ? `CLEARED POPULATION:\n${profile.populationText}` : "CLEARED POPULATION: Not explicitly defined — restrict to what the IFU states."}
+
+MARKETING MEDIUM: ${medium ? (MEDIUM_LABELS[medium] || medium) : "Not specified"}
+${medium ? getMediumGuidance(medium) : ""}
 
 APPROVED CLAIMS (ONLY these exact phrasings are pre-cleared):
 ${claimsList || "None defined. Every claim must be evaluated against the IFU."}
@@ -608,9 +644,10 @@ export async function analyzeContent(
   rules: PromoRule[],
   content: string,
   images?: ExtractedImage[],
-  pageTextRanges?: PageTextRange[]
+  pageTextRanges?: PageTextRange[],
+  medium?: string
 ): Promise<AnalysisResponse> {
-  const systemPrompt = buildSystemPrompt(profile, claims, rules);
+  const systemPrompt = buildSystemPrompt(profile, claims, rules, medium);
   const sentences = splitSentences(content);
   const chunks = buildChunks(content, sentences);
 
