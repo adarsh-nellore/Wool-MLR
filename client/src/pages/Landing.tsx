@@ -199,7 +199,7 @@ function HeroMockup() {
       </div>
 
       {/* Outer glow */}
-      <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-amber-200/30 via-rose-200/20 to-stone-200/30 blur-2xl" />
+      <div className="absolute -inset-6 rounded-3xl bg-gradient-to-br from-amber-200/30 via-rose-200/20 to-stone-200/30 blur-2xl" />
 
       <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-stone-900/10 border border-stone-200/60 bg-white/70 backdrop-blur-xl">
         {/* Title bar */}
@@ -227,9 +227,9 @@ function HeroMockup() {
         </div>
 
         {/* Three-panel layout */}
-        <div className="flex bg-white/50" style={{ height: 360 }}>
+        <div className="flex bg-white/50" style={{ height: 480 }}>
           {/* Left sidebar */}
-          <div className="w-[100px] border-r border-stone-200/40 bg-stone-50/50 p-3 space-y-1.5 hidden sm:block">
+          <div className="w-[120px] border-r border-stone-200/40 bg-stone-50/50 p-4 space-y-1.5 hidden sm:block">
             <div className="text-[8px] font-semibold text-stone-400 uppercase tracking-wider px-1 mb-2">
               Sections
             </div>
@@ -250,8 +250,8 @@ function HeroMockup() {
           </div>
 
           {/* Center - Document with scan line */}
-          <div className="flex-1 p-5 overflow-hidden relative">
-            <div className="bg-white/80 rounded-xl border border-stone-200/40 p-5 h-full space-y-2.5 relative overflow-hidden">
+          <div className="flex-1 p-6 overflow-hidden relative">
+            <div className="bg-white/80 rounded-xl border border-stone-200/40 p-6 h-full space-y-3 relative overflow-hidden">
               {/* Scan line animation */}
               <motion.div
                 className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/60 to-transparent z-10 pointer-events-none"
@@ -281,10 +281,17 @@ function HeroMockup() {
                 { w: 35, flag: false, heading: true },
                 { w: 82, flag: false },
                 { w: 68, flag: "high" },
+                { w: 50, flag: false },
                 { w: 0, flag: false },
                 { w: 45, flag: false, heading: true },
                 { w: 75, flag: false },
                 { w: 58, flag: "medium" },
+                { w: 88, flag: false },
+                { w: 0, flag: false },
+                { w: 38, flag: false, heading: true },
+                { w: 70, flag: false },
+                { w: 62, flag: false },
+                { w: 80, flag: false },
               ].map((line, i) =>
                 line.w === 0 ? (
                   <div key={i} className="h-2" />
@@ -318,12 +325,12 @@ function HeroMockup() {
           </div>
 
           {/* Right sidebar - Findings */}
-          <div className="w-[130px] border-l border-stone-200/40 bg-stone-50/50 p-3 space-y-3 hidden sm:block">
-            <div className="text-center py-2">
-              <div className="text-2xl font-bold text-amber-600 tabular-nums leading-none">
+          <div className="w-[160px] border-l border-stone-200/40 bg-stone-50/50 p-4 space-y-3 hidden sm:block">
+            <div className="text-center py-3">
+              <div className="text-3xl font-bold text-amber-600 tabular-nums leading-none">
                 {riskScore}
               </div>
-              <div className="text-[9px] text-stone-400 mt-1 font-medium">
+              <div className="text-[10px] text-stone-400 mt-1.5 font-medium">
                 Risk Score
               </div>
               <div className="flex h-2 rounded-full overflow-hidden bg-stone-100 gap-px mt-2 mx-1">
@@ -444,9 +451,9 @@ export default function Landing() {
       </header>
 
       {/* ── Hero Section ── */}
-      <section className="min-h-screen flex items-center pt-16 pb-24 px-8 relative z-10">
+      <section className="min-h-screen flex items-center pt-20 pb-20 px-8 relative z-10">
         <div className="max-w-7xl mx-auto w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left column - Text */}
             <motion.div
               initial="hidden"
@@ -511,7 +518,7 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
               style={{ y: mockupY }}
-              className="lg:scale-105"
+              className="lg:scale-110"
             >
               <HeroMockup />
             </motion.div>
@@ -520,7 +527,7 @@ export default function Landing() {
       </section>
 
       {/* ── Metrics Strip ── */}
-      <section className="py-24 px-8 relative z-10 border-y border-stone-200/40 bg-white/30 backdrop-blur-md">
+      <section className="py-20 px-8 relative z-10 border-y border-stone-200/40 bg-white/30 backdrop-blur-md">
         <motion.div
           initial="hidden"
           whileInView="visible"
