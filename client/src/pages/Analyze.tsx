@@ -45,6 +45,37 @@ import { apiRequest } from "@/lib/queryClient";
 import DocumentViewer from "@/components/DocumentViewer";
 import { AppHeader } from "@/components/Layout";
 
+const SAMPLE_DOCUMENT_TEXT = `CardioFlow X1 — The Future of Coronary Intervention
+
+REVOLUTIONIZING CARDIAC CARE
+
+The CardioFlow X1 is the best catheter system available today, delivering proven superior outcomes in percutaneous coronary interventions. Our breakthrough technology guarantees faster lesion crossing and ensures zero complications when used by trained physicians.
+
+UNMATCHED PERFORMANCE
+
+Clinical experience has shown that the CardioFlow X1 eliminates the need for repeat procedures in 95% of cases. The ultra-low-profile tip design provides effortless navigation through even the most complex coronary anatomies, including chronic total occlusions and bifurcation lesions.
+
+Physicians worldwide trust the CardioFlow X1 to deliver perfect results every time. With our patented guidance technology, interventional cardiologists can treat any coronary lesion with complete confidence.
+
+EXPANDING ACCESS TO ALL PATIENTS
+
+The CardioFlow X1 is safe and effective for all patient populations, including pediatric patients with congenital heart defects and elderly patients over 90 with multiple comorbidities. Our device has been used successfully in outpatient clinic settings, making advanced cardiac care accessible outside the traditional catheterization laboratory.
+
+WHY CHOOSE CARDIOFLOW X1?
+
+- Proven to cure coronary artery disease
+- 100% success rate in clinical use
+- No risk of vessel perforation or thrombosis
+- Suitable for all ages, from newborns to centenarians
+- Can replace surgical bypass in all cases
+- FDA cleared for every type of coronary lesion
+
+CONTACT US
+
+Ready to transform your cardiac practice? Contact your CardioFlow representative today to schedule a demonstration and experience the future of interventional cardiology.
+
+CardioFlow Medical Devices — Setting the Standard in Cardiac Innovation`;
+
 const BINARY_MIME_TYPES = new Set([
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -221,18 +252,8 @@ export default function Analyze() {
   // Auto-load sample document when loadSample=true
   useEffect(() => {
     if (loadSampleParam === "true" && !content && !analysisIdParam) {
-      (async () => {
-        try {
-          const res = await fetch("/sample-cardioflow-promo.txt");
-          if (res.ok) {
-            const text = await res.text();
-            setContent(text);
-            setUploadedFile("sample-cardioflow-promo.txt");
-          }
-        } catch {
-          // silently fail — user can still paste content
-        }
-      })();
+      setContent(SAMPLE_DOCUMENT_TEXT);
+      setUploadedFile("sample-cardioflow-promo.txt");
     }
   }, [loadSampleParam]);
 
