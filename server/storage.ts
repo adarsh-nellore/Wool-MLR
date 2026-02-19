@@ -5,7 +5,11 @@ import type {
   PromoRule,
   InsertProduct,
   StoredAnalysis,
+  StoredImage,
+  StoredDocument,
   AnalysisResponse,
+  Lead,
+  InsertLead,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -27,9 +31,14 @@ export interface IStorage {
   getRulesByProfileId(profileId: number): Promise<PromoRule[]>;
 
   // Analysis ops
-  saveAnalysis(profileId: number, content: string, response: AnalysisResponse): Promise<StoredAnalysis>;
+  saveAnalysis(profileId: number, content: string, response: AnalysisResponse, images?: StoredImage[], originalDocument?: StoredDocument): Promise<StoredAnalysis>;
   getAnalysesByProfileId(profileId: number): Promise<StoredAnalysis[]>;
   getAnalysisById(id: number): Promise<StoredAnalysis | undefined>;
+  getRecentAnalysesByUserId(userId: string, limit?: number): Promise<StoredAnalysis[]>;
+
+  // Lead ops
+  createLead(data: InsertLead): Promise<Lead>;
+  getLeads(): Promise<Lead[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -42,6 +51,8 @@ export class MemStorage implements IStorage {
   private nextRuleId = 1;
   private analyses = new Map<number, StoredAnalysis>();
   private nextAnalysisId = 1;
+  private leads = new Map<number, Lead>();
+  private nextLeadId = 1;
 
   // ── Users ──
   async getUser(id: string): Promise<User | undefined> {
@@ -167,13 +178,15 @@ export class MemStorage implements IStorage {
   }
 
   // ── Analyses ──
-  async saveAnalysis(profileId: number, content: string, response: AnalysisResponse): Promise<StoredAnalysis> {
+  async saveAnalysis(profileId: number, content: string, response: AnalysisResponse, images?: StoredImage[], originalDocument?: StoredDocument): Promise<StoredAnalysis> {
     const analysis: StoredAnalysis = {
       id: this.nextAnalysisId++,
       profileId,
       content,
       results: response.results,
       summary: response.summary,
+      images: images && images.length > 0 ? images : undefined,
+      originalDocument,
       createdAt: new Date(),
     };
     this.analyses.set(analysis.id, analysis);
@@ -189,28 +202,65 @@ export class MemStorage implements IStorage {
   async getAnalysisById(id: number): Promise<StoredAnalysis | undefined> {
     return this.analyses.get(id);
   }
+
+  async getRecentAnalysesByUserId(userId: string, limit = 10): Promise<StoredAnalysis[]> {
+    const userProfileIds = new Set(
+      Array.from(this.profiles.values())
+        .filter(p => p.userId === userId)
+        .map(p => p.id)
+    );
+    return Array.from(this.analyses.values())
+      .filter(a => userProfileIds.has(a.profileId))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  // ── Leads ──
+  async createLead(data: InsertLead): Promise<Lead> {
+    const lead: Lead = {
+      id: this.nextLeadId++,
+      name: data.name,
+      email: data.email,
+      createdAt: new Date(),
+    };
+    this.leads.set(lead.id, lead);
+    return lead;
+  }
+
+  async getLeads(): Promise<Lead[]> {
+    return Array.from(this.leads.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
 }
 
 export const storage = new MemStorage();
 
-// Seed a default product profile so the app is immediately usable after server restart
-storage.createProfile("dev-user", {
-  name: "CardioFlow X1",
-  deviceType: "implant",
-  oneLiner: "Next-generation cardiac catheter system for minimally invasive coronary interventions.",
-  ifuText: "The CardioFlow X1 Catheter System is indicated for use in percutaneous coronary interventions (PCI) including balloon angioplasty and stent delivery in adult patients with coronary artery disease. The device is intended for use by trained interventional cardiologists in a catheterization laboratory setting.",
-  populationText: "Adult patients (18+) undergoing percutaneous coronary interventions in hospital catheterization laboratories.",
-  risksText: "Contraindicated in patients with known hypersensitivity to catheter materials (polyurethane, silicone). Not indicated for use in pediatric patients. Risks include vessel perforation, dissection, thrombosis, distal embolization, and arrhythmia. Use caution in patients with severely calcified lesions or chronic total occlusions. Device should not be re-sterilized or reused.",
-  regions: ["US"],
-  claims: [
-    { claimText: "Designed to facilitate rapid lesion crossing in coronary interventions.", claimType: "efficacy", evidenceType: "clinical", reference: "" },
-    { claimText: "Low-profile catheter tip may help reduce procedural time.", claimType: "efficacy", evidenceType: "clinical", reference: "" },
-    { claimText: "Compatible with standard 6F guide catheters for broad procedural flexibility.", claimType: "feature", evidenceType: "", reference: "" },
-  ],
-  rules: [
-    { ruleText: "Avoid superlatives and absolutes (best, only, cure, 100%, guaranteed, zero risk, etc.)", isDefault: true },
-    { ruleText: "Do not imply diagnostic use if the device is only cleared for screening or decision-support.", isDefault: true },
-    { ruleText: "Do not reference populations or settings outside the cleared indications.", isDefault: true },
-    { ruleText: "Always include at least one risk/limitation statement in any asset that contains benefit claims.", isDefault: true },
-  ],
-});
+// Seed exactly one sample product profile on startup
+(async () => {
+  // Wipe any stale profiles so we always start clean with one sample
+  const existing = await storage.getProfilesByUserId("dev-user");
+  for (const p of existing) {
+    await storage.deleteProfile(p.id);
+  }
+
+  const { profile } = await storage.createProfile("dev-user", {
+    name: "CardioFlow X1",
+    deviceType: "implant",
+    oneLiner: "Next-generation cardiac catheter system for minimally invasive coronary interventions.",
+    ifuText: "The CardioFlow X1 Catheter System is indicated for use in percutaneous coronary interventions (PCI) including balloon angioplasty and stent delivery in adult patients with coronary artery disease. The device is intended for use by trained interventional cardiologists in a catheterization laboratory setting.",
+    populationText: "Adult patients (18+) undergoing percutaneous coronary interventions in hospital catheterization laboratories.",
+    risksText: "Contraindicated in patients with known hypersensitivity to catheter materials (polyurethane, silicone). Not indicated for use in pediatric patients. Risks include vessel perforation, dissection, thrombosis, distal embolization, and arrhythmia. Use caution in patients with severely calcified lesions or chronic total occlusions. Device should not be re-sterilized or reused.",
+    regions: ["US"],
+    claims: [
+      { claimText: "Designed to facilitate rapid lesion crossing in coronary interventions.", claimType: "efficacy", evidenceType: "clinical", reference: "" },
+      { claimText: "Low-profile catheter tip may help reduce procedural time.", claimType: "efficacy", evidenceType: "clinical", reference: "" },
+      { claimText: "Compatible with standard 6F guide catheters for broad procedural flexibility.", claimType: "feature", evidenceType: "", reference: "" },
+    ],
+    rules: [
+      { ruleText: "Avoid superlatives and absolutes (best, only, cure, 100%, guaranteed, zero risk, etc.)", isDefault: true },
+      { ruleText: "Do not imply diagnostic use if the device is only cleared for screening or decision-support.", isDefault: true },
+      { ruleText: "Do not reference populations or settings outside the cleared indications.", isDefault: true },
+      { ruleText: "Always include at least one risk/limitation statement in any asset that contains benefit claims.", isDefault: true },
+    ],
+  });
+  await storage.updateProfile(profile.id, { isSample: true });
+})();

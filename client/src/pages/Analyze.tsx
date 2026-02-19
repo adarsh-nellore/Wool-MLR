@@ -20,6 +20,12 @@ import {
   Download,
   RefreshCw,
   FileType,
+  AlertTriangle,
+  Info,
+  ShieldAlert,
+  Image as ImageIcon,
+  FileImage,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,9 +41,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useProducts } from "@/hooks/use-products";
-import { useAnalysis } from "@/hooks/use-analysis";
-import type { AnalysisResult, DriftType, ExposureTag, StoredAnalysis } from "@shared/schema";
+import { useAnalysis, useAnalysisUpload } from "@/hooks/use-analysis";
+import type { AnalysisResult, DriftType, ExposureTag, StoredAnalysis, StoredImage, StoredDocument } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import DocumentViewer from "@/components/DocumentViewer";
+
+const BINARY_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+]);
+
+function getFileTypeIcon(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (ext === 'pdf') return <FileType className="w-3 h-3" />;
+  if (ext === 'docx' || ext === 'doc') return <FileText className="w-3 h-3" />;
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext || '')) return <FileImage className="w-3 h-3" />;
+  return <File className="w-3 h-3" />;
+}
 
 // ── Drift UI Constants ──
 
@@ -66,17 +90,56 @@ function getHighlightClass(severity: string): string {
 
 // CSS for highlight states — injected once
 const HIGHLIGHT_STYLES = `
-  .highlight-high { background: rgba(239, 68, 68, 0.15); border-radius: 2px; cursor: pointer; transition: background 0.15s; }
-  .highlight-medium { background: rgba(245, 158, 11, 0.15); border-radius: 2px; cursor: pointer; transition: background 0.15s; }
-  .highlight-low { background: rgba(59, 130, 246, 0.15); border-radius: 2px; cursor: pointer; transition: background 0.15s; }
+  .highlight-high {
+    background: rgba(220, 38, 38, 0.18);
+    border-bottom: 2px solid rgba(220, 38, 38, 0.6);
+    border-radius: 1px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .highlight-medium {
+    background: rgba(217, 119, 6, 0.14);
+    border-bottom: 2px dashed rgba(217, 119, 6, 0.5);
+    border-radius: 1px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .highlight-low {
+    background: rgba(59, 130, 246, 0.08);
+    border-bottom: 1px dotted rgba(59, 130, 246, 0.5);
+    border-radius: 1px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
 
-  .highlight-high:hover, .highlight-high[data-hovered="true"] { background: rgba(239, 68, 68, 0.35); }
-  .highlight-medium:hover, .highlight-medium[data-hovered="true"] { background: rgba(245, 158, 11, 0.35); }
-  .highlight-low:hover, .highlight-low[data-hovered="true"] { background: rgba(59, 130, 246, 0.35); }
+  .highlight-high:hover, .highlight-high[data-hovered="true"] {
+    background: rgba(220, 38, 38, 0.3);
+    border-bottom-color: rgba(220, 38, 38, 0.8);
+  }
+  .highlight-medium:hover, .highlight-medium[data-hovered="true"] {
+    background: rgba(217, 119, 6, 0.25);
+    border-bottom-color: rgba(217, 119, 6, 0.7);
+  }
+  .highlight-low:hover, .highlight-low[data-hovered="true"] {
+    background: rgba(59, 130, 246, 0.16);
+    border-bottom-color: rgba(59, 130, 246, 0.7);
+  }
 
-  .highlight-high[data-selected="true"] { background: rgba(239, 68, 68, 0.5); box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.6); }
-  .highlight-medium[data-selected="true"] { background: rgba(245, 158, 11, 0.5); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.6); }
-  .highlight-low[data-selected="true"] { background: rgba(59, 130, 246, 0.5); box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.6); }
+  .highlight-high[data-selected="true"] {
+    background: rgba(220, 38, 38, 0.35);
+    border-bottom: 2px solid rgba(220, 38, 38, 0.9);
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.4);
+  }
+  .highlight-medium[data-selected="true"] {
+    background: rgba(217, 119, 6, 0.3);
+    border-bottom: 2px solid rgba(217, 119, 6, 0.8);
+    box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.3);
+  }
+  .highlight-low[data-selected="true"] {
+    background: rgba(59, 130, 246, 0.2);
+    border-bottom: 2px solid rgba(59, 130, 246, 0.7);
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
 
   [contenteditable="true"]:focus { outline: none; }
   [contenteditable="true"] h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
@@ -97,6 +160,7 @@ export default function Analyze() {
   const params = new URLSearchParams(searchString);
   const preselectedProfileId = params.get("profileId");
   const analysisIdParam = params.get("analysisId");
+  const loadSampleParam = params.get("loadSample");
 
   const [step, setStep] = useState<"input" | "results">("input");
   const [results, setResults] = useState<AnalysisResult[] | null>(null);
@@ -110,6 +174,10 @@ export default function Analyze() {
   const [selectedProfileId, setSelectedProfileId] = useState<string>(preselectedProfileId || "");
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(null);
   const [severityFilter, setSeverityFilter] = useState<"all" | "high" | "medium" | "low">("all");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [extractedImages, setExtractedImages] = useState<StoredImage[]>([]);
+  const [originalDocument, setOriginalDocument] = useState<StoredDocument | null>(null);
+  const [scrollToPage, setScrollToPage] = useState<number | null>(null);
 
   const documentRef = useRef<HTMLDivElement>(null);
   const editableRef = useRef<HTMLDivElement>(null);
@@ -118,6 +186,7 @@ export default function Analyze() {
   const { toast } = useToast();
   const { data: products } = useProducts();
   const analysis = useAnalysis();
+  const uploadAnalysis = useAnalysisUpload();
 
   // Inject highlight CSS once
   useEffect(() => {
@@ -139,6 +208,8 @@ export default function Analyze() {
           const stored: StoredAnalysis = await res.json();
           setContent(stored.content);
           setResults(stored.results);
+          setExtractedImages(stored.images || []);
+          setOriginalDocument(stored.originalDocument || null);
           setSelectedProfileId(String(stored.profileId));
           setStep("results");
         } catch {
@@ -147,6 +218,24 @@ export default function Analyze() {
       })();
     }
   }, [analysisIdParam]);
+
+  // Auto-load sample document when loadSample=true
+  useEffect(() => {
+    if (loadSampleParam === "true" && !content && !analysisIdParam) {
+      (async () => {
+        try {
+          const res = await fetch("/sample-cardioflow-promo.txt");
+          if (res.ok) {
+            const text = await res.text();
+            setContent(text);
+            setUploadedFile("sample-cardioflow-promo.txt");
+          }
+        } catch {
+          // silently fail — user can still paste content
+        }
+      })();
+    }
+  }, [loadSampleParam]);
 
   // Set first product as default if none preselected
   useEffect(() => {
@@ -193,6 +282,23 @@ export default function Analyze() {
     }
     return counts;
   }, [results, content]);
+
+  // Determine if we're in document render mode (PDF or image)
+  const isDocumentMode = originalDocument !== null;
+  const isPdfMode = originalDocument?.mimeType === "application/pdf";
+
+  // Page-based navigation for PDF mode
+  const pageIssueCounts = useMemo(() => {
+    if (!isPdfMode || !results) return new Map<number, number>();
+    const counts = new Map<number, number>();
+    for (const r of results) {
+      const page = r.pageNumber || 1;
+      counts.set(page, (counts.get(page) || 0) + 1);
+    }
+    return counts;
+  }, [isPdfMode, results]);
+
+  const totalPages = originalDocument?.pageCount || 0;
 
   // Build highlight ranges from results with robust matching
   const highlightRanges = useMemo(() => {
@@ -407,7 +513,20 @@ export default function Analyze() {
 
   const handleFiles = (file: File) => {
     setUploadedFile(file.name);
-    // Read text from file
+
+    const fileSizeMB = file.size / 1024 / 1024;
+    if (fileSizeMB > 25) {
+      toast({ title: "Large File", description: `${file.name} is ${fileSizeMB.toFixed(0)}MB. Processing may take longer for large files.` });
+    }
+
+    // Check if this is a binary file type that needs server-side processing
+    if (BINARY_MIME_TYPES.has(file.type) || /\.(pdf|docx|doc|png|jpe?g|webp|gif)$/i.test(file.name)) {
+      setPendingFile(file);
+      toast({ title: "File Ready", description: `${file.name} will be processed on the server when you analyze.` });
+      return;
+    }
+
+    // Read text from file (txt, csv, md)
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -424,28 +543,57 @@ export default function Analyze() {
       toast({ title: "Select a profile", description: "Please select a product profile first.", variant: "destructive" });
       return;
     }
-    if (!content.trim()) {
+    if (!content.trim() && !pendingFile) {
       toast({ title: "No content", description: "Please enter or upload content to analyze.", variant: "destructive" });
+      return;
+    }
+    if (pendingFile && pendingFile.size > 30 * 1024 * 1024) {
+      toast({ title: "File Too Large", description: "Maximum file size is 30MB.", variant: "destructive" });
       return;
     }
 
     setStep("results");
-    analysis.mutate(
-      { profileId: parseInt(selectedProfileId, 10), content },
-      {
-        onSuccess: (data) => {
-          setResults(data.results);
-          toast({
-            title: "Analysis Complete",
-            description: `Found ${data.summary.total} potential compliance issue${data.summary.total !== 1 ? 's' : ''}.`,
-          });
-        },
-        onError: (error) => {
-          toast({ title: "Analysis Failed", description: error.message, variant: "destructive" });
-          setStep("input");
-        },
-      }
-    );
+
+    if (pendingFile) {
+      // Upload file for server-side processing
+      uploadAnalysis.mutate(
+        { profileId: parseInt(selectedProfileId, 10), files: [pendingFile] },
+        {
+          onSuccess: (data) => {
+            setContent(data.extractedText);
+            setExtractedImages(data.images || []);
+            setOriginalDocument(data.originalDocument || null);
+            setResults(data.results);
+            setPendingFile(null);
+            toast({
+              title: "Analysis Complete",
+              description: `Found ${data.summary.total} potential compliance issue${data.summary.total !== 1 ? 's' : ''}${data.summary.imageFindings ? ` (${data.summary.imageFindings} in images)` : ''}.`,
+            });
+          },
+          onError: (error) => {
+            toast({ title: "Analysis Failed", description: error.message, variant: "destructive" });
+            setStep("input");
+          },
+        }
+      );
+    } else {
+      analysis.mutate(
+        { profileId: parseInt(selectedProfileId, 10), content },
+        {
+          onSuccess: (data) => {
+            setResults(data.results);
+            toast({
+              title: "Analysis Complete",
+              description: `Found ${data.summary.total} potential compliance issue${data.summary.total !== 1 ? 's' : ''}.`,
+            });
+          },
+          onError: (error) => {
+            toast({ title: "Analysis Failed", description: error.message, variant: "destructive" });
+            setStep("input");
+          },
+        }
+      );
+    }
   };
 
   const applyFix = (id: string) => {
@@ -463,8 +611,14 @@ export default function Analyze() {
      setResults(null);
      setContent("");
      setUploadedFile(null);
+     setPendingFile(null);
+     setExtractedImages([]);
+     setOriginalDocument(null);
+     setScrollToPage(null);
      setActiveSectionIndex(null);
      setContentDirty(false);
+     initialResultsCount.current = null;
+     initialWeightedScore.current = null;
   };
 
   const downloadFile = (blob: Blob, filename: string) => {
@@ -504,6 +658,33 @@ export default function Analyze() {
     downloadFile(blob, 'analyzed-document.doc');
   };
 
+  const handleShare = () => {
+    const profileName = selectedProfileName;
+    const totalFindings = results?.length || 0;
+    const score = riskScore.score;
+
+    const subject = `MLR Review — ${profileName}: ${totalFindings} compliance findings (Risk Score: ${score})`;
+
+    const top3 = (results || []).slice(0, 3).map((r, i) => {
+      const original = r.original.length > 120 ? r.original.substring(0, 120) + '...' : r.original;
+      return `${i + 1}. [${r.severity.toUpperCase()}] ${r.issue}\n   "${original}"`;
+    }).join('\n\n');
+
+    const deepLink = window.location.href;
+
+    const body = `Device Profile: ${profileName}\nRisk Score: ${score}/100 (${riskScore.label})\nFindings: ${totalFindings} total (${severityCounts.high} high, ${severityCounts.medium} medium, ${severityCounts.low} low)\n\nTop Findings:\n${top3}\n\nFull Report: ${deepLink}`;
+
+    // Try Web Share API on mobile
+    if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+      navigator.share({ title: subject, text: body, url: deepLink }).catch(() => {});
+      return;
+    }
+
+    // Fallback to mailto
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailto, '_blank');
+  };
+
   const scrollToSection = (index: number) => {
     setActiveSectionIndex(index);
     if (index === -1) {
@@ -517,9 +698,17 @@ export default function Analyze() {
 
   const handleSelectIssue = (issueId: string) => {
     setSelectedIssueId(issueId);
-    // Scroll document to the highlight
-    const highlightEl = document.getElementById(`highlight-${issueId}`);
-    highlightEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const result = results?.find(r => r.id === issueId);
+    if (isDocumentMode && result?.pageNumber) {
+      // In document mode, scroll to the page
+      setScrollToPage(result.pageNumber);
+    } else if (result?.imageId) {
+      const imageEl = document.getElementById(`image-${result.imageId}`);
+      imageEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      const highlightEl = document.getElementById(`highlight-${issueId}`);
+      highlightEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   // Update highlight data attributes via DOM (avoids re-render of contentEditable)
@@ -560,6 +749,54 @@ export default function Analyze() {
     };
   }, [results]);
 
+  // ── Risk Score ──
+  // Weighted score: each finding contributes points based on drift level.
+  // The score is normalized to 0-100 where 0 = fully compliant, 100 = critical risk.
+  // As fixes are applied (findings removed), the score decreases.
+  const riskScore = useMemo(() => {
+    if (!results || results.length === 0) return { score: 0, maxScore: 0, label: 'Compliant', color: 'text-emerald-600', bgColor: 'bg-emerald-500', barColor: 'bg-emerald-500', ringColor: 'ring-emerald-200' };
+
+    // Weight by drift level: L0=1, L1=3, L2=7, L3=15, L4=25
+    const weights: Record<number, number> = { 0: 1, 1: 3, 2: 7, 3: 15, 4: 25 };
+    const totalWeightedScore = results.reduce((sum, r) => sum + (weights[r.driftLevel] || 3), 0);
+
+    // Max possible = if every finding were L4
+    const maxPossible = results.length * 25;
+    // Normalize to 0-100
+    const normalized = Math.round((totalWeightedScore / Math.max(maxPossible, 1)) * 100);
+
+    // Determine label and colors based on score
+    if (normalized >= 70) return { score: normalized, maxScore: totalWeightedScore, label: 'Critical Risk', color: 'text-red-700', bgColor: 'bg-red-600', barColor: 'bg-red-500', ringColor: 'ring-red-200' };
+    if (normalized >= 50) return { score: normalized, maxScore: totalWeightedScore, label: 'High Risk', color: 'text-red-600', bgColor: 'bg-red-500', barColor: 'bg-red-400', ringColor: 'ring-red-100' };
+    if (normalized >= 35) return { score: normalized, maxScore: totalWeightedScore, label: 'Elevated Risk', color: 'text-amber-600', bgColor: 'bg-amber-500', barColor: 'bg-amber-400', ringColor: 'ring-amber-100' };
+    if (normalized >= 20) return { score: normalized, maxScore: totalWeightedScore, label: 'Moderate Risk', color: 'text-amber-500', bgColor: 'bg-amber-400', barColor: 'bg-amber-300', ringColor: 'ring-amber-100' };
+    if (normalized >= 10) return { score: normalized, maxScore: totalWeightedScore, label: 'Low Risk', color: 'text-sky-600', bgColor: 'bg-sky-500', barColor: 'bg-sky-400', ringColor: 'ring-sky-100' };
+    return { score: normalized, maxScore: totalWeightedScore, label: 'Minimal Risk', color: 'text-emerald-600', bgColor: 'bg-emerald-500', barColor: 'bg-emerald-400', ringColor: 'ring-emerald-100' };
+  }, [results]);
+
+  // Compute the initial score (from the original analysis, before any fixes)
+  // so we can show progress. We track this via a ref that captures the first result set.
+  const initialResultsCount = useRef<number | null>(null);
+  const initialWeightedScore = useRef<number | null>(null);
+  useEffect(() => {
+    if (results && results.length > 0 && initialResultsCount.current === null) {
+      initialResultsCount.current = results.length;
+      const weights: Record<number, number> = { 0: 1, 1: 3, 2: 7, 3: 15, 4: 25 };
+      initialWeightedScore.current = results.reduce((sum, r) => sum + (weights[r.driftLevel] || 3), 0);
+    }
+    if (!results || results.length === 0) {
+      initialResultsCount.current = null;
+      initialWeightedScore.current = null;
+    }
+  }, [results]);
+
+  const fixProgress = useMemo(() => {
+    if (!results || initialResultsCount.current === null || initialResultsCount.current === 0) return null;
+    const fixed = initialResultsCount.current - results.length;
+    if (fixed <= 0) return null;
+    return { fixed, total: initialResultsCount.current };
+  }, [results]);
+
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
 
@@ -570,6 +807,9 @@ export default function Analyze() {
              <Button variant="ghost" size="icon" className="h-7 w-7">
                 <Home className="h-4 w-4 text-muted-foreground" />
              </Button>
+          </Link>
+          <Link href="/devices" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Devices
           </Link>
           <Separator orientation="vertical" className="h-5" />
           <div className="flex items-center gap-2">
@@ -599,6 +839,9 @@ export default function Analyze() {
                     <Wand2 className="mr-1.5 h-3 w-3" /> Re-analyze
                   </Button>
                 )}
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleShare}>
+                  <Share2 className="mr-1.5 h-3 w-3" /> Share
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-7 text-xs">
@@ -634,7 +877,7 @@ export default function Analyze() {
             onDrop={handleDrop}
           >
             <AnimatePresence>
-              {content ? (
+              {(content || pendingFile) ? (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -647,31 +890,49 @@ export default function Analyze() {
                     </span>
                     {uploadedFile && (
                       <Badge variant="secondary" className="gap-1 text-xs h-6">
-                        <File className="w-3 h-3" />
+                        {getFileTypeIcon(uploadedFile)}
                         {uploadedFile}
-                        <button className="ml-1 hover:text-foreground" onClick={() => setUploadedFile(null)}>
+                        {pendingFile && <span className="text-muted-foreground">(ready to upload)</span>}
+                        <button className="ml-1 hover:text-foreground" onClick={() => { setUploadedFile(null); setPendingFile(null); }}>
                           <X className="w-3 h-3" />
                         </button>
                       </Badge>
                     )}
                   </div>
-                  <div
-                    contentEditable
-                    suppressContentEditableWarning
-                    className="flex-1 p-6 text-lg leading-relaxed bg-card border rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 overflow-y-auto focus:outline-none"
-                    style={{ fontFamily: 'Georgia, serif' }}
-                    dangerouslySetInnerHTML={{ __html: highlightedHTML }}
-                    onBlur={(e) => {
-                      const newText = e.currentTarget.innerText.trim();
-                      if (newText !== content.trim()) {
-                        setContent(newText);
-                      }
-                    }}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setContent("")}>Clear</Button>
+                  {pendingFile && !content ? (
+                    <div className="flex-1 p-6 bg-card border rounded-lg flex flex-col items-center justify-center text-center gap-3">
+                      <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                        {getFileTypeIcon(pendingFile.name)}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{pendingFile.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {(pendingFile.size / 1024 / 1024).toFixed(1)} MB — ready to process
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Text and images will be extracted on the server
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="flex-1 p-6 text-lg leading-relaxed bg-card border rounded-lg focus-visible:ring-1 focus-visible:ring-primary/20 overflow-y-auto focus:outline-none"
+                      style={{ fontFamily: 'Georgia, serif' }}
+                      dangerouslySetInnerHTML={{ __html: highlightedHTML }}
+                      onBlur={(e) => {
+                        const newText = e.currentTarget.innerText.trim();
+                        if (newText !== content.trim()) {
+                          setContent(newText);
+                        }
+                      }}
+                    />
+                  )}
+                  <div className="flex justify-end gap-2 sticky bottom-0 bg-background pt-2 pb-2 z-10">
+                    <Button variant="ghost" size="sm" onClick={() => { setContent(""); setPendingFile(null); setUploadedFile(null); }}>Clear</Button>
                     <Button onClick={handleAnalyze} className="btn-soft-primary" size="sm" disabled={!selectedProfileId}>
-                      <Wand2 className="mr-1.5 h-3.5 w-3.5" /> Analyze Content
+                      <Wand2 className="mr-1.5 h-3.5 w-3.5" /> {pendingFile ? "Upload & Analyze" : "Analyze Content"}
                     </Button>
                   </div>
                 </motion.div>
@@ -686,7 +947,7 @@ export default function Analyze() {
                   </div>
                   <h3 className="text-lg font-semibold tracking-tight">Upload Content</h3>
                   <p className="text-muted-foreground text-sm mt-1 mb-5">
-                    Drag & drop a text file or paste content directly
+                    Drag & drop a PDF, Word doc, image, or text file
                   </p>
                   <div className="flex flex-col gap-2.5 w-full max-w-[240px]">
                     <div className="relative">
@@ -695,7 +956,7 @@ export default function Analyze() {
                         type="file"
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         onChange={(e) => e.target.files && e.target.files[0] && handleFiles(e.target.files[0])}
-                        accept=".txt,.csv,.md"
+                        accept=".txt,.csv,.md,.pdf,.docx,.doc,.png,.jpg,.jpeg,.webp"
                       />
                     </div>
                     <div className="relative flex items-center">
@@ -731,7 +992,9 @@ export default function Analyze() {
 
                 <div className="px-3 py-2.5 border-b border-border/60 h-10 flex items-center">
                    {leftSidebarOpen ? (
-                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Sections</span>
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        {isPdfMode ? "Pages" : "Sections"}
+                      </span>
                    ) : (
                       <Menu className="h-3.5 w-3.5 text-muted-foreground mx-auto" />
                    )}
@@ -740,36 +1003,72 @@ export default function Analyze() {
                 {leftSidebarOpen && (
                    <ScrollArea className="flex-1">
                      <div className="p-1.5 space-y-0.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`w-full justify-start text-xs h-8 font-medium ${activeSectionIndex === null || activeSectionIndex === -1 ? 'bg-primary/8 text-primary' : 'text-muted-foreground'}`}
-                          onClick={() => scrollToSection(-1)}
-                        >
-                           <FileText className="w-3.5 h-3.5 mr-2 shrink-0" /> Full Document
-                           {results && results.length > 0 && (
-                             <Badge variant="secondary" className="ml-auto h-4 text-[10px] px-1.5">{results.length}</Badge>
-                           )}
-                        </Button>
-                        {sections.map((section, idx) => {
-                          const issueCount = sectionIssueCounts.get(idx) || 0;
-                          return (
+                        {isPdfMode ? (
+                          <>
                             <Button
-                              key={idx}
                               variant="ghost"
                               size="sm"
-                              className={`w-full justify-start text-xs h-8 ${activeSectionIndex === idx ? 'bg-primary/8 text-primary font-medium' : 'text-muted-foreground'}`}
-                              onClick={() => scrollToSection(idx)}
-                              title={section.label}
+                              className={`w-full justify-start text-xs h-8 font-medium ${activeSectionIndex === null || activeSectionIndex === -1 ? 'bg-primary/8 text-primary' : 'text-muted-foreground'}`}
+                              onClick={() => { setActiveSectionIndex(-1); setScrollToPage(null); }}
                             >
-                               <FileText className="w-3.5 h-3.5 mr-2 shrink-0" />
-                               <span className="truncate">{section.label}</span>
-                               {issueCount > 0 && (
-                                 <Badge variant="secondary" className="ml-auto h-4 text-[10px] px-1.5 shrink-0 bg-amber-100 text-amber-700">{issueCount}</Badge>
+                               <FileText className="w-3.5 h-3.5 mr-2 shrink-0" /> All Pages
+                               {results && results.length > 0 && (
+                                 <Badge variant="secondary" className="ml-auto h-4 text-[10px] px-1.5">{results.length}</Badge>
                                )}
                             </Button>
-                          );
-                        })}
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                              const issueCount = pageIssueCounts.get(pageNum) || 0;
+                              return (
+                                <Button
+                                  key={pageNum}
+                                  variant="ghost"
+                                  size="sm"
+                                  className={`w-full justify-start text-xs h-8 ${activeSectionIndex === pageNum ? 'bg-primary/8 text-primary font-medium' : 'text-muted-foreground'}`}
+                                  onClick={() => { setActiveSectionIndex(pageNum); setScrollToPage(pageNum); }}
+                                >
+                                   <FileText className="w-3.5 h-3.5 mr-2 shrink-0" />
+                                   <span className="truncate">Page {pageNum}</span>
+                                   {issueCount > 0 && (
+                                     <Badge variant="secondary" className="ml-auto h-4 text-[10px] px-1.5 shrink-0 bg-amber-100 text-amber-700">{issueCount}</Badge>
+                                   )}
+                                </Button>
+                              );
+                            })}
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={`w-full justify-start text-xs h-8 font-medium ${activeSectionIndex === null || activeSectionIndex === -1 ? 'bg-primary/8 text-primary' : 'text-muted-foreground'}`}
+                              onClick={() => scrollToSection(-1)}
+                            >
+                               <FileText className="w-3.5 h-3.5 mr-2 shrink-0" /> Full Document
+                               {results && results.length > 0 && (
+                                 <Badge variant="secondary" className="ml-auto h-4 text-[10px] px-1.5">{results.length}</Badge>
+                               )}
+                            </Button>
+                            {sections.map((section, idx) => {
+                              const issueCount = sectionIssueCounts.get(idx) || 0;
+                              return (
+                                <Button
+                                  key={idx}
+                                  variant="ghost"
+                                  size="sm"
+                                  className={`w-full justify-start text-xs h-8 ${activeSectionIndex === idx ? 'bg-primary/8 text-primary font-medium' : 'text-muted-foreground'}`}
+                                  onClick={() => scrollToSection(idx)}
+                                  title={section.label}
+                                >
+                                   <FileText className="w-3.5 h-3.5 mr-2 shrink-0" />
+                                   <span className="truncate">{section.label}</span>
+                                   {issueCount > 0 && (
+                                     <Badge variant="secondary" className="ml-auto h-4 text-[10px] px-1.5 shrink-0 bg-amber-100 text-amber-700">{issueCount}</Badge>
+                                   )}
+                                </Button>
+                              );
+                            })}
+                          </>
+                        )}
                      </div>
                    </ScrollArea>
                 )}
@@ -779,52 +1078,151 @@ export default function Analyze() {
              {/* Center: Document Viewer */}
              <div className="flex-1 bg-muted/5 relative overflow-hidden flex flex-col">
                 <div ref={documentRef} className="w-full h-full overflow-y-auto px-4 py-4">
-                   <div className="mx-auto min-h-[900px] bg-white rounded-md shadow-sm border border-border/60 p-10 relative">
-                      {analysis.isPending && (
-                         <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center">
-                            <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-                            <p className="text-lg font-medium text-foreground">Analyzing Content...</p>
-                            <p className="text-muted-foreground">Checking claims against {selectedProfileName}</p>
+                   {/* Loading overlay */}
+                   {(analysis.isPending || uploadAnalysis.isPending) && (
+                     <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
+                        <p className="text-lg font-medium text-foreground">
+                          {uploadAnalysis.isPending ? "Processing & Analyzing Files..." : "Analyzing Content..."}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {uploadAnalysis.isPending ? "Extracting text & images, then checking claims" : `Checking claims against ${selectedProfileName}`}
+                        </p>
+                     </div>
+                   )}
+
+                   {isDocumentMode && !isPdfMode ? (
+                     /* Rendered document (Image only - not PDF) */
+                     <div className="mx-auto bg-white rounded-md shadow-sm border border-border/60 p-6 relative min-h-[900px]">
+                       <div className="text-[11px] text-muted-foreground bg-muted/30 rounded px-3 py-1.5 mx-auto max-w-xl text-center mb-2">
+                         Fixes apply to extracted text. Use Download to export the corrected version.
+                       </div>
+                       <DocumentViewer
+                         originalDocument={originalDocument}
+                         results={results}
+                         selectedIssueId={selectedIssueId}
+                         hoveredIssueId={hoveredIssueId}
+                         onSelectIssue={(id) => {
+                           setSelectedIssueId(id);
+                           const cardEl = document.getElementById(`card-${id}`);
+                           cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                         }}
+                         onHoverIssue={setHoveredIssueId}
+                         scrollToPage={scrollToPage}
+                       />
+
+                       {/* Extracted images in document mode */}
+                       {extractedImages.length > 0 && (
+                         <div className="mt-4 pt-4 border-t border-border/40">
+                           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                             <ImageIcon className="w-3.5 h-3.5" /> Extracted Images ({extractedImages.length})
+                           </h3>
+                           <div className="grid grid-cols-1 gap-3">
+                             {extractedImages.map((img) => {
+                               const imgFindings = results?.filter(r => r.imageId === img.id) || [];
+                               const borderColor = imgFindings.some(f => f.severity === 'high') ? 'border-red-400'
+                                 : imgFindings.some(f => f.severity === 'medium') ? 'border-amber-400'
+                                 : imgFindings.length > 0 ? 'border-sky-300' : 'border-border/60';
+                               return (
+                                 <div key={img.id} id={`image-${img.id}`} className={`border-2 ${borderColor} rounded-lg p-3 bg-muted/10`}>
+                                   <div className="flex items-center justify-between mb-2">
+                                     <span className="text-xs text-muted-foreground">{img.sourceLabel}</span>
+                                     {imgFindings.length > 0 && <Badge variant="secondary" className="text-[10px] h-5">{imgFindings.length} finding{imgFindings.length !== 1 ? 's' : ''}</Badge>}
+                                   </div>
+                                   <img src={`data:${img.mediaType};base64,${img.data}`} alt={img.sourceLabel} className="max-w-full rounded border border-border/30" style={{ maxHeight: '400px', objectFit: 'contain' }} />
+                                 </div>
+                               );
+                             })}
+                           </div>
                          </div>
-                      )}
-                      <div
-                        ref={editableRef}
-                        contentEditable
-                        suppressContentEditableWarning
-                        className="text-foreground min-h-[800px] focus:outline-none"
-                        dangerouslySetInnerHTML={{ __html: highlightedHTML || '<p style="font-family: Georgia, serif; font-size: 1.125rem; line-height: 1.75; color: #a1a1aa;">Paste or type your content here...</p>' }}
-                        onBlur={(e) => {
-                          const newText = e.currentTarget.innerText.trim();
-                          if (newText !== content.trim()) {
-                            setContent(newText);
-                            if (results) setContentDirty(true);
-                          }
-                        }}
-                        onClick={(e) => {
-                          // Event delegation for highlight clicks
-                          const target = (e.target as HTMLElement).closest("[data-issue-id]");
-                          if (target) {
-                            const issueId = target.getAttribute("data-issue-id");
-                            if (issueId) {
-                              setSelectedIssueId(issueId);
-                              const cardEl = document.getElementById(`card-${issueId}`);
-                              cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                       )}
+                     </div>
+                   ) : (
+                     /* Text editor fallback */
+                     <div className="mx-auto min-h-[900px] bg-white rounded-md shadow-sm border border-border/60 p-10 relative">
+                        <div
+                          ref={editableRef}
+                          contentEditable
+                          suppressContentEditableWarning
+                          className="text-foreground min-h-[800px] focus:outline-none"
+                          dangerouslySetInnerHTML={{ __html: highlightedHTML || '<p style="font-family: Georgia, serif; font-size: 1.125rem; line-height: 1.75; color: #a1a1aa;">Paste or type your content here...</p>' }}
+                          onBlur={(e) => {
+                            const newText = e.currentTarget.innerText.trim();
+                            if (newText !== content.trim()) {
+                              setContent(newText);
+                              if (results) setContentDirty(true);
                             }
-                          }
-                        }}
-                        onMouseOver={(e) => {
-                          const target = (e.target as HTMLElement).closest("[data-issue-id]");
-                          if (target) {
-                            const issueId = target.getAttribute("data-issue-id");
-                            if (issueId) setHoveredIssueId(issueId);
-                          }
-                        }}
-                        onMouseOut={(e) => {
-                          const target = (e.target as HTMLElement).closest("[data-issue-id]");
-                          if (target) setHoveredIssueId(null);
-                        }}
-                      />
-                   </div>
+                          }}
+                          onClick={(e) => {
+                            const target = (e.target as HTMLElement).closest("[data-issue-id]");
+                            if (target) {
+                              const issueId = target.getAttribute("data-issue-id");
+                              if (issueId) {
+                                setSelectedIssueId(issueId);
+                                const cardEl = document.getElementById(`card-${issueId}`);
+                                cardEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }
+                          }}
+                          onMouseOver={(e) => {
+                            const target = (e.target as HTMLElement).closest("[data-issue-id]");
+                            if (target) {
+                              const issueId = target.getAttribute("data-issue-id");
+                              if (issueId) setHoveredIssueId(issueId);
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            const target = (e.target as HTMLElement).closest("[data-issue-id]");
+                            if (target) setHoveredIssueId(null);
+                          }}
+                        />
+
+                        {/* Extracted Images Gallery (only in text mode) */}
+                        {extractedImages.length > 0 && (
+                          <div className="mt-8 pt-6 border-t border-border/40">
+                            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+                              <ImageIcon className="w-4 h-4" />
+                              Extracted Images ({extractedImages.length})
+                            </h3>
+                            <div className="grid grid-cols-1 gap-4">
+                              {extractedImages.map((img) => {
+                                const imgFindings = results?.filter(r => r.imageId === img.id) || [];
+                                const highestSeverity = imgFindings.reduce<string>((acc, f) => {
+                                  if (f.severity === 'high') return 'high';
+                                  if (f.severity === 'medium' && acc !== 'high') return 'medium';
+                                  if (f.severity === 'low' && acc !== 'high' && acc !== 'medium') return 'low';
+                                  return acc;
+                                }, '');
+                                const borderColor = highestSeverity === 'high' ? 'border-red-400' : highestSeverity === 'medium' ? 'border-amber-400' : highestSeverity === 'low' ? 'border-sky-300' : 'border-border/60';
+
+                                return (
+                                  <div
+                                    key={img.id}
+                                    id={`image-${img.id}`}
+                                    className={`border-2 ${borderColor} rounded-lg p-3 bg-muted/10`}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs font-medium text-muted-foreground">{img.sourceLabel}</span>
+                                      {imgFindings.length > 0 && (
+                                        <Badge variant="secondary" className="text-[10px] h-5">
+                                          {imgFindings.length} finding{imgFindings.length !== 1 ? 's' : ''}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <img
+                                      src={`data:${img.mediaType};base64,${img.data}`}
+                                      alt={img.sourceLabel}
+                                      className="max-w-full rounded border border-border/30"
+                                      style={{ maxHeight: '400px', objectFit: 'contain' }}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                     </div>
+                   )}
                 </div>
              </div>
 
@@ -845,42 +1243,98 @@ export default function Analyze() {
                 </div>
 
                 <div className="border-b border-border/60 min-w-[300px]">
+                   {/* Header */}
                    <div className="px-3 py-2 flex items-center justify-between">
-                      <span className="font-medium text-sm">Findings</span>
+                      <span className="font-medium text-sm">Compliance Review</span>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => setRightSidebarOpen(false)}>
                           <PanelRightClose className="h-3.5 w-3.5" />
                       </Button>
                    </div>
+
+                   {/* Risk Score Meter */}
                    {results && results.length > 0 && (
-                      <div className="px-2 pb-2 flex items-center gap-1">
-                         <button
-                            className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'all' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'}`}
-                            onClick={() => setSeverityFilter('all')}
-                         >
-                            All {results.length}
-                         </button>
-                         {severityCounts.high > 0 && (
+                      <div className="px-3 pb-3 space-y-3">
+                         {/* Score display */}
+                         <div className="flex items-baseline justify-between">
+                            <div className="flex items-baseline gap-2">
+                               <span className={`text-2xl font-bold tabular-nums ${riskScore.color}`}>{riskScore.score}</span>
+                               <span className="text-xs text-muted-foreground">/100</span>
+                            </div>
+                            <span className={`text-xs font-semibold ${riskScore.color}`}>{riskScore.label}</span>
+                         </div>
+
+                         {/* Risk bar — segmented gauge */}
+                         <div className="relative">
+                            <div className="flex h-2.5 rounded-full overflow-hidden bg-muted/40 gap-[1px]">
+                               {/* 5 segments representing the scale */}
+                               <div className={`flex-1 rounded-l-full transition-colors duration-500 ${riskScore.score >= 10 ? 'bg-emerald-400' : 'bg-muted/60'}`} />
+                               <div className={`flex-1 transition-colors duration-500 ${riskScore.score >= 20 ? 'bg-yellow-400' : 'bg-muted/60'}`} />
+                               <div className={`flex-1 transition-colors duration-500 ${riskScore.score >= 35 ? 'bg-amber-400' : 'bg-muted/60'}`} />
+                               <div className={`flex-1 transition-colors duration-500 ${riskScore.score >= 50 ? 'bg-orange-500' : 'bg-muted/60'}`} />
+                               <div className={`flex-1 rounded-r-full transition-colors duration-500 ${riskScore.score >= 70 ? 'bg-red-500' : 'bg-muted/60'}`} />
+                            </div>
+                            {/* Needle/indicator */}
+                            <div
+                               className="absolute top-[-3px] transition-all duration-700 ease-out"
+                               style={{ left: `${Math.min(Math.max(riskScore.score, 2), 98)}%`, transform: 'translateX(-50%)' }}
+                            >
+                               <div className={`w-1 h-4 rounded-full ${riskScore.bgColor} shadow-sm`} />
+                            </div>
+                            {/* Scale labels */}
+                            <div className="flex justify-between mt-1">
+                               <span className="text-[9px] text-muted-foreground/60">Compliant</span>
+                               <span className="text-[9px] text-muted-foreground/60">Critical</span>
+                            </div>
+                         </div>
+
+                         {/* Fix progress indicator */}
+                         {fixProgress && (
+                            <div className="flex items-center gap-2 bg-emerald-50 rounded-md px-2.5 py-1.5">
+                               <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                               <span className="text-[11px] text-emerald-700 font-medium">
+                                  {fixProgress.fixed} of {fixProgress.total} issues resolved
+                               </span>
+                            </div>
+                         )}
+
+                         {/* Breakdown by severity */}
+                         <div className="grid grid-cols-3 gap-1.5">
                             <button
-                               className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'high' ? 'bg-red-100 text-red-700' : 'text-red-500/70 hover:text-red-700 hover:bg-red-50'}`}
+                               className={`flex flex-col items-center rounded-md py-1.5 transition-colors ${
+                                  severityFilter === 'high' ? 'bg-red-100 ring-1 ring-red-200' : 'bg-muted/30 hover:bg-red-50'
+                               }`}
                                onClick={() => setSeverityFilter(severityFilter === 'high' ? 'all' : 'high')}
                             >
-                               {severityCounts.high} High
+                               <span className="text-sm font-bold text-red-600 tabular-nums">{severityCounts.high}</span>
+                               <span className="text-[10px] text-red-600/70 font-medium">High</span>
                             </button>
-                         )}
-                         {severityCounts.medium > 0 && (
                             <button
-                               className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'medium' ? 'bg-amber-100 text-amber-700' : 'text-amber-500/70 hover:text-amber-700 hover:bg-amber-50'}`}
+                               className={`flex flex-col items-center rounded-md py-1.5 transition-colors ${
+                                  severityFilter === 'medium' ? 'bg-amber-100 ring-1 ring-amber-200' : 'bg-muted/30 hover:bg-amber-50'
+                               }`}
                                onClick={() => setSeverityFilter(severityFilter === 'medium' ? 'all' : 'medium')}
                             >
-                               {severityCounts.medium} Med
+                               <span className="text-sm font-bold text-amber-600 tabular-nums">{severityCounts.medium}</span>
+                               <span className="text-[10px] text-amber-600/70 font-medium">Medium</span>
                             </button>
-                         )}
-                         {severityCounts.low > 0 && (
                             <button
-                               className={`h-6 px-2 rounded text-[11px] font-medium transition-colors ${severityFilter === 'low' ? 'bg-blue-100 text-blue-700' : 'text-blue-500/70 hover:text-blue-700 hover:bg-blue-50'}`}
+                               className={`flex flex-col items-center rounded-md py-1.5 transition-colors ${
+                                  severityFilter === 'low' ? 'bg-sky-100 ring-1 ring-sky-200' : 'bg-muted/30 hover:bg-sky-50'
+                               }`}
                                onClick={() => setSeverityFilter(severityFilter === 'low' ? 'all' : 'low')}
                             >
-                               {severityCounts.low} Low
+                               <span className="text-sm font-bold text-sky-600 tabular-nums">{severityCounts.low}</span>
+                               <span className="text-[10px] text-sky-600/70 font-medium">Low</span>
+                            </button>
+                         </div>
+
+                         {/* Show all / filter label */}
+                         {severityFilter !== 'all' && (
+                            <button
+                               className="w-full text-center text-[11px] text-primary hover:underline"
+                               onClick={() => setSeverityFilter('all')}
+                            >
+                               Show all {results.length} findings
                             </button>
                          )}
                       </div>
@@ -891,8 +1345,39 @@ export default function Analyze() {
                    <div className="space-y-1.5 pb-16">
                       {filteredResults?.map((result) => {
                          const isExpanded = selectedIssueId === result.id || hoveredIssueId === result.id;
-                         const severityColor = result.severity === 'high' ? 'border-l-red-500' : result.severity === 'medium' ? 'border-l-amber-400' : 'border-l-blue-400';
-                         const severityDot = result.severity === 'high' ? 'bg-red-500' : result.severity === 'medium' ? 'bg-amber-400' : 'bg-blue-400';
+
+                         // Severity-specific styles
+                         const severityConfig = result.severity === 'high' ? {
+                           border: 'border-l-red-600',
+                           bg: isExpanded ? 'bg-red-50/60' : 'bg-background',
+                           badgeBg: 'bg-red-600 text-white',
+                           badgeLabel: 'HIGH',
+                           icon: <ShieldAlert className="w-3.5 h-3.5 text-red-600 shrink-0" />,
+                           ring: 'ring-red-300',
+                           accentText: 'text-red-700',
+                           suggestionBg: 'bg-red-50 border border-red-100',
+                           fixBtn: 'bg-red-600 hover:bg-red-700 text-white',
+                         } : result.severity === 'medium' ? {
+                           border: 'border-l-amber-500',
+                           bg: isExpanded ? 'bg-amber-50/40' : 'bg-background',
+                           badgeBg: 'bg-amber-500 text-white',
+                           badgeLabel: 'MED',
+                           icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />,
+                           ring: 'ring-amber-300',
+                           accentText: 'text-amber-700',
+                           suggestionBg: 'bg-amber-50 border border-amber-100',
+                           fixBtn: 'bg-amber-600 hover:bg-amber-700 text-white',
+                         } : {
+                           border: 'border-l-sky-400',
+                           bg: isExpanded ? 'bg-sky-50/30' : 'bg-background',
+                           badgeBg: 'bg-sky-100 text-sky-700',
+                           badgeLabel: 'LOW',
+                           icon: <Info className="w-3.5 h-3.5 text-sky-500 shrink-0" />,
+                           ring: 'ring-sky-200',
+                           accentText: 'text-sky-600',
+                           suggestionBg: 'bg-sky-50 border border-sky-100',
+                           fixBtn: 'bg-sky-600 hover:bg-sky-700 text-white',
+                         };
 
                          return (
                            <motion.div
@@ -903,23 +1388,51 @@ export default function Analyze() {
                               layout
                            >
                               <div
-                                 className={`border-l-[3px] ${severityColor} rounded-md bg-background border border-border/50 cursor-pointer transition-all hover:shadow-sm ${
-                                    selectedIssueId === result.id ? 'shadow-sm ring-1 ring-primary/30' : ''
+                                 className={`border-l-[3px] ${severityConfig.border} rounded-md ${severityConfig.bg} border border-border/50 cursor-pointer transition-all hover:shadow-sm ${
+                                    selectedIssueId === result.id ? `shadow-md ring-1 ${severityConfig.ring}` : ''
                                  }`}
                                  onClick={() => handleSelectIssue(result.id)}
                                  onMouseEnter={() => setHoveredIssueId(result.id)}
                                  onMouseLeave={() => setHoveredIssueId(null)}
                               >
-                                 {/* Collapsed: severity dot + issue label + snippet */}
+                                 {/* Collapsed: icon + issue + severity badge */}
                                  <div className="px-3 py-2">
                                     <div className="flex items-center gap-2 mb-1">
-                                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${severityDot}`} />
-                                       <span className="text-xs font-medium text-foreground truncate">{result.issue}</span>
-                                       <span className="text-[10px] text-muted-foreground ml-auto shrink-0">L{result.driftLevel}</span>
+                                       {result.imageId ? <ImageIcon className="w-3.5 h-3.5 text-purple-500 shrink-0" /> : severityConfig.icon}
+                                       <span className={`text-xs font-semibold truncate ${isExpanded ? severityConfig.accentText : 'text-foreground'}`}>{result.issue}</span>
+                                       {result.imageId && (
+                                         <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-sm shrink-0 leading-none font-medium">IMG</span>
+                                       )}
+                                       <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm ml-auto shrink-0 leading-none ${severityConfig.badgeBg}`}>
+                                          {severityConfig.badgeLabel}
+                                       </span>
                                     </div>
-                                    <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 pl-3.5">
-                                       {result.original}
-                                    </p>
+                                    {result.imageId ? (
+                                      <div className="pl-6">
+                                        {(() => {
+                                          const sourceImg = extractedImages.find(img => img.id === result.imageId);
+                                          return sourceImg ? (
+                                            <div className="flex items-center gap-2">
+                                              <img
+                                                src={`data:${sourceImg.mediaType};base64,${sourceImg.data}`}
+                                                alt={sourceImg.sourceLabel}
+                                                className="w-10 h-10 rounded border border-border/40 object-cover shrink-0"
+                                              />
+                                              <div>
+                                                <p className="text-[10px] text-muted-foreground font-medium">{result.imageLabel || sourceImg.sourceLabel}</p>
+                                                <p className="text-[11px] text-muted-foreground leading-snug line-clamp-1">{result.original}</p>
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{result.original}</p>
+                                          );
+                                        })()}
+                                      </div>
+                                    ) : (
+                                      <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2 pl-6">
+                                         {result.original}
+                                      </p>
+                                    )}
                                  </div>
 
                                  {/* Expanded: reason, tags, suggestion, fix */}
@@ -932,41 +1445,48 @@ export default function Analyze() {
                                           transition={{ duration: 0.15 }}
                                           className="overflow-hidden"
                                        >
-                                          <div className="px-3 pb-2.5 space-y-2 border-t border-border/40 pt-2">
+                                          <div className="px-3 pb-2.5 space-y-2.5 border-t border-border/40 pt-2">
                                              {/* Reason */}
                                              <p className="text-xs text-foreground/80 leading-relaxed">
                                                 {result.reason}
                                              </p>
 
-                                             {/* Compact metadata row */}
-                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-[10px] text-muted-foreground">{getDriftShort(result.driftType)}</span>
-                                                {result.exposureTags?.length > 0 && (
-                                                   <>
-                                                      <span className="text-border">·</span>
-                                                      {result.exposureTags.map(tag => (
-                                                         <span key={tag} className="text-[10px] text-muted-foreground">
-                                                            {EXPOSURE_SHORT[tag]}
-                                                         </span>
-                                                      ))}
-                                                   </>
-                                                )}
+                                             {/* Metadata tags */}
+                                             <div className="flex items-center gap-1.5 flex-wrap overflow-hidden">
+                                                <span className="text-[10px] font-medium bg-muted/60 px-1.5 py-0.5 rounded text-muted-foreground shrink-0">
+                                                   {getDriftShort(result.driftType)}
+                                                </span>
+                                                <span className="text-[10px] bg-muted/40 px-1.5 py-0.5 rounded text-muted-foreground shrink-0">
+                                                   L{result.driftLevel}
+                                                </span>
+                                                {result.exposureTags?.length > 0 && result.exposureTags.map(tag => (
+                                                   <span key={tag} className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-medium truncate max-w-[120px]">
+                                                      {EXPOSURE_SHORT[tag]}
+                                                   </span>
+                                                ))}
                                              </div>
 
-                                             {/* Suggestion + Apply Fix */}
+                                             {/* Suggestion + Apply Fix — always shown */}
                                              {result.suggestion && (
                                                 <div className="space-y-2">
-                                                   <p className="text-[11px] text-foreground/70 leading-relaxed bg-muted/30 rounded px-2.5 py-1.5">
-                                                      {result.suggestion}
-                                                   </p>
-                                                   <Button
-                                                      size="sm"
-                                                      className="w-full h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
-                                                      onClick={(e) => { e.stopPropagation(); applyFix(result.id); }}
-                                                   >
-                                                      <Sparkles className="w-3 h-3 mr-1.5" />
-                                                      Apply AI Fix
-                                                   </Button>
+                                                   <div className={`${severityConfig.suggestionBg} rounded px-2.5 py-2`}>
+                                                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground block mb-1">
+                                                        {result.imageId ? "Recommended Change" : "Suggested Fix"}
+                                                      </span>
+                                                      <p className="text-[11px] text-foreground/80 leading-relaxed">
+                                                         {result.suggestion}
+                                                      </p>
+                                                   </div>
+                                                   {!result.imageId && (
+                                                     <Button
+                                                        size="sm"
+                                                        className={`w-full h-7 text-xs ${severityConfig.fixBtn}`}
+                                                        onClick={(e) => { e.stopPropagation(); applyFix(result.id); }}
+                                                     >
+                                                        <Sparkles className="w-3 h-3 mr-1.5" />
+                                                        Apply Fix
+                                                     </Button>
+                                                   )}
                                                 </div>
                                              )}
                                           </div>

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/Landing";
 import Home from "@/pages/Home";
 import ProductDetails from "@/pages/ProductDetails";
 import Onboarding from "@/pages/Onboarding";
@@ -32,15 +33,20 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 function Router() {
   return (
-    <AuthGate>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/product/:id" component={ProductDetails} />
-        <Route path="/onboarding" component={Onboarding} />
-        <Route path="/analyze" component={Analyze} />
-        <Route component={NotFound} />
-      </Switch>
-    </AuthGate>
+    <Switch>
+      <Route path="/" component={Landing} />
+      <Route path="/devices" component={Home} />
+      <Route path="/analyze" component={Analyze} />
+      <Route>
+        <AuthGate>
+          <Switch>
+            <Route path="/product/:id" component={ProductDetails} />
+            <Route path="/onboarding" component={Onboarding} />
+            <Route component={NotFound} />
+          </Switch>
+        </AuthGate>
+      </Route>
+    </Switch>
   );
 }
 

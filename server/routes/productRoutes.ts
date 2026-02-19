@@ -117,6 +117,34 @@ export function registerProductRoutes(app: Express): void {
     }
   });
 
+  // Recent analyses across all profiles for the user (must be before :id route)
+  app.get("/api/analyses/recent", async (req: Request, res) => {
+    try {
+      const userId = getUserId(req);
+      const analyses = await storage.getRecentAnalysesByUserId(userId, 10);
+
+      // Enrich with profile name
+      const enriched = await Promise.all(
+        analyses.map(async (a) => {
+          const profile = await storage.getProfileById(a.profileId);
+          return {
+            id: a.id,
+            profileId: a.profileId,
+            profileName: profile?.name || "Unknown",
+            deviceType: profile?.deviceType || "unknown",
+            summary: a.summary,
+            createdAt: a.createdAt,
+          };
+        })
+      );
+
+      res.json(enriched);
+    } catch (error) {
+      console.error("Error fetching recent analyses:", error);
+      res.status(500).json({ error: "Failed to fetch recent analyses" });
+    }
+  });
+
   // Get a single stored analysis
   app.get("/api/analyses/:id", async (req: Request, res) => {
     try {

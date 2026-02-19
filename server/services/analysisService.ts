@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ProductProfile, CoreClaim, PromoRule, AnalysisResult, AnalysisResponse, DriftType, DriftLevel, ExposureTag } from "@shared/schema";
+import type { ExtractedImage, PageTextRange } from "./documentParser";
 
 const anthropic = new Anthropic();
 
@@ -81,36 +82,73 @@ For EACH sentence in the promotional content, you MUST ask yourself:
 If the answer to #1, #3, or #4 is YES, or the answer to #2 is NO → FLAG IT.
 
 ═══════════════════════════════════════
-WHAT YOU MUST FLAG (non-exhaustive)
+SEVERITY SCALE — BASED ON REGULATORY IMPLICATION
 ═══════════════════════════════════════
 
-HIGH RISK (driftLevel 3-4):
-- Claims beyond IFU scope (cures, treats, prevents conditions not in IFU)
-- Off-label use implications
-- Unapproved populations or settings
-- Superiority/comparative claims without substantiation
-- Safety minimization or missing required warnings
-- Claims of autonomous clinical decision-making
+Assess each finding by asking: "If the FDA reviewed this promotional material and saw this specific claim, what is the MOST LIKELY regulatory consequence?"
 
-MEDIUM RISK (driftLevel 2):
-- Implied boundary crossing through context or framing
-- Benefit claims that stretch IFU language
-- Statistical claims without source citations
-- Implied clinical outcomes not stated in IFU
-- Testimonial-style language or implied endorsements
+Compare every claim DIRECTLY against the IFU, cleared populations, and approved claims above. The severity is determined by HOW FAR the claim drifts from what is actually cleared — not just by the type of language used.
 
-LOW RISK (driftLevel 0-1) — YOU MUST STILL FLAG THESE:
-- "innovative", "advanced", "state-of-the-art", "next-generation", "cutting-edge", "breakthrough", "revolutionary", "leading", "premier", "world-class"
-- "easy to use", "intuitive", "seamless", "reliable", "trusted", "proven"
-- "designed to", "may help", "has the potential to", "can contribute to", "aimed at"
-- "life-changing", "transform", "don't wait", "game-changer"
-- "trusted by", "widely adopted", "preferred by", "growing number of"
-- ANY benefit statement without a nearby risk/limitation disclosure
-- ANY adjective that enhances perceived efficacy ("rapid", "fast", "precise", "accurate", "effective", "powerful", "superior")
-- Marketing puffery that an FDA reviewer could question
-- Promotional tone or framing of factual information
-- Missing fair balance (benefits without risks nearby)
-- Brand positioning language that implies clinical superiority
+driftLevel 4 — CRITICAL (Warning Letter / Consent Decree territory):
+  Regulatory implication: FDA Warning Letter, product seizure, or consent decree.
+  Test: Does this claim fundamentally misrepresent what the device is or does?
+  Examples:
+  - Claiming the device diagnoses, treats, cures, or prevents a disease/condition NOT in the IFU
+  - Claiming the device replaces physician clinical judgment
+  - Claiming the device is cleared/approved for a use it is NOT cleared for
+  - Stating or implying the device has a different classification than it does
+
+driftLevel 3 — HIGH (Untitled Letter / Enforcement action likely):
+  Regulatory implication: FDA Untitled Letter, 483 observation, mandatory corrective action.
+  Test: Does this claim cross a boundary that the IFU explicitly defines?
+  Examples:
+  - Efficacy claims that go beyond what the IFU states (e.g., IFU says "aids in" but promo says "ensures" or "guarantees")
+  - Expanding to populations not mentioned in clearance (pediatric, pregnant, etc.)
+  - Superiority/comparative claims without adequate clinical substantiation
+  - Omitting required warnings, risks, or contraindications listed above
+  - Claiming clinical outcomes (e.g., "reduces infection rates") not supported by the IFU
+  - Expanding the use environment beyond what is cleared (e.g., home use for a hospital-only device)
+  - Missing fair balance in a way that materially misleads about safety
+
+driftLevel 2 — MEDIUM (Regulatory scrutiny / Substantiation demand):
+  Regulatory implication: FDA request for substantiation, advisory notice, increased audit risk.
+  Test: Does this claim IMPLY something beyond the IFU without explicitly stating it?
+  Examples:
+  - Implied clinical benefits through framing or context that the IFU doesn't support
+  - Statistical claims or clinical data references without proper citations
+  - Testimonial-style language or implied endorsements suggesting unapproved efficacy
+  - Benefit claims that stretch or paraphrase IFU wording to sound more impressive
+  - Implied safety ("safe", "gentle", "no side effects") not supported by the risk profile
+  - Comparative framing ("preferred by", "superior") without substantiation
+  - Missing fair balance — benefit statements without nearby risk disclosures
+
+driftLevel 1 — LOW (Reviewer flag / Best practice concern):
+  Regulatory implication: Internal reviewer flag, could compound with other issues.
+  Test: Is this promotional language that could be questioned but is unlikely to trigger enforcement alone?
+  Examples:
+  - Promotional adjectives enhancing perceived efficacy: "rapid", "precise", "powerful", "effective"
+  - Hedged benefit language: "designed to", "may help", "has the potential to"
+  - Emotional or urgency language: "life-changing", "don't wait", "game-changer"
+  - Social proof without substantiation: "trusted by thousands", "widely adopted"
+  - Brand positioning suggesting clinical superiority: "leading", "premier", "world-class"
+
+driftLevel 0 — INFORMATIONAL (Minor note):
+  Regulatory implication: Unlikely to trigger any action, but worth documenting.
+  Examples:
+  - Generic marketing puffery: "innovative", "state-of-the-art", "next-generation"
+  - Convenience claims: "easy to use", "intuitive", "seamless"
+  - Minor stylistic issues
+
+HOW TO DECIDE THE LEVEL — ALWAYS ask:
+1. What does the IFU ACTUALLY say? (Read it literally.)
+2. What does this promotional claim IMPLY to a patient or clinician reading it?
+3. What is the GAP between #1 and #2?
+4. If the FDA saw this gap, what would they do?
+   - Send a Warning Letter → driftLevel 4
+   - Send an Untitled Letter or demand corrective action → driftLevel 3
+   - Request substantiation or flag for audit → driftLevel 2
+   - Note it but probably not act → driftLevel 1
+   - Ignore it → driftLevel 0
 
 ═══════════════════════════════════════
 OUTPUT FORMAT
@@ -127,10 +165,12 @@ CRITICAL RULES:
 - "original" MUST be the EXACT text copied character-for-character from the input. Do NOT paraphrase.
 - "start" must be the character offset where the flagged text begins IN THE CHUNK provided.
 - "end" must be the character offset where the flagged text ends IN THE CHUNK provided.
-- "suggestion" must provide a compliant rewrite preserving marketing intent.
+- "suggestion" is REQUIRED for EVERY finding at ALL drift levels (0-4). Even for low-risk puffery, provide a compliant rewrite that removes the problematic word/phrase while preserving marketing intent.
 - You MUST produce a finding for EVERY sentence that has any risk. Flag aggressively.
 - It is MUCH worse to miss a finding than to over-flag. When in doubt, FLAG IT.
 - A single sentence can have MULTIPLE findings if it has multiple issues (e.g., puffery AND missing fair balance).
+- Assign driftLevel based on REGULATORY IMPLICATION, not language type. A sentence with simple words can be driftLevel 3 if its implication crosses an IFU boundary. A dramatic-sounding word can be driftLevel 0 if it has no regulatory consequence.
+- Compare EVERY claim against the specific IFU and risk text provided above. The gap between what is claimed and what is cleared determines severity.
 
 Respond with ONLY a JSON object (no markdown, no code fences):
 {
@@ -156,7 +196,10 @@ Respond with ONLY a JSON object (no markdown, no code fences):
  * Split content into sentences for analysis.
  */
 function splitSentences(content: string): string[] {
-  return content.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g)?.map(s => s.trim()).filter(s => s.length > 0) || [content];
+  // Normalize single newlines to spaces; preserve double newlines
+  const normalized = content.replace(/(?<!\n)\n(?!\n)/g, ' ');
+  return normalized.match(/[^.!?]+[.!?]+|[^.!?]+$/g)
+    ?.map(s => s.trim()).filter(s => s.length > 0) || [content];
 }
 
 /**
@@ -415,11 +458,157 @@ function deduplicateResults(results: AnalysisResult[]): AnalysisResult[] {
   return deduped.map((r, i) => ({ ...r, id: String(i + 1) }));
 }
 
+function buildImageAnalysisPrompt(images: ExtractedImage[]): string {
+  const imageList = images.map((img, i) => `Image ${i + 1}: "${img.sourceLabel}"${img.nearbyText ? ` (nearby text: "${img.nearbyText.substring(0, 100)}...")` : ""}`).join("\n");
+
+  return `You are reviewing IMAGES from a medical device promotional material. Examine each image for FDA regulatory compliance issues.
+
+For each image, analyze:
+1. VISIBLE TEXT: Headers, overlays, captions, fine print, text within the image
+2. BEFORE/AFTER COMPARISONS: Any implied efficacy through visual comparison
+3. CHARTS/DATA: Data visualizations that may make unsupported claims
+4. TESTIMONIAL IMAGERY: Patient photos, endorsement imagery suggesting outcomes
+5. ANATOMICAL DIAGRAMS: Accuracy relative to cleared indications
+6. PRODUCT ANNOTATIONS: Labels, callouts that extend beyond IFU
+7. CERTIFICATION/ENDORSEMENT IMAGERY: Logos, seals, certifications that may mislead
+
+Images being reviewed:
+${imageList}
+
+For each finding, include the "imageId" field matching the image's ID (e.g., "img-1").
+Set "start" to -1 and "end" to -1 for all image findings.
+For "original", describe the specific visual element or text found in the image.
+
+Respond with ONLY a JSON object (no markdown, no code fences):
+{
+  "results": [
+    {
+      "id": "1",
+      "imageId": "img-1",
+      "original": "description of the visual element or text in the image",
+      "driftType": "one of the 8 types",
+      "driftLevel": 0,
+      "exposureTags": [],
+      "boundaryReference": "which boundary and how",
+      "issue": "short 2-4 word label",
+      "reason": "1-2 sentence explanation",
+      "suggestion": "what should be changed in this image"
+    }
+  ]
+}
+
+If no issues are found in any image, return {"results": []}.`;
+}
+
+async function runImageAnalysisCall(
+  systemPrompt: string,
+  images: ExtractedImage[],
+  label: string
+): Promise<any[]> {
+  // Build mixed content blocks: text prompt + images interleaved
+  const contentBlocks: Anthropic.Messages.ContentBlockParam[] = [
+    { type: "text", text: buildImageAnalysisPrompt(images) },
+  ];
+
+  for (const img of images) {
+    contentBlocks.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: img.mediaType,
+        data: img.data,
+      },
+    });
+    contentBlocks.push({
+      type: "text",
+      text: `[Above: ${img.sourceLabel}, ID: ${img.id}]`,
+    });
+  }
+
+  let response: Anthropic.Message;
+  try {
+    response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 16384,
+      messages: [{ role: "user", content: contentBlocks }],
+      system: systemPrompt,
+    });
+  } catch (err: any) {
+    console.error(`[analysis:${label}] Image API call failed:`, err?.message || err);
+    throw new Error(`AI image analysis failed: ${err?.message || "Could not reach the analysis service"}`);
+  }
+
+  const textBlock = response.content.find(b => b.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    console.error(`[analysis:${label}] No text block in image response`);
+    return [];
+  }
+
+  console.log(`[analysis:${label}] Image response length: ${textBlock.text.length} chars`);
+
+  try {
+    const parsed = parseJsonResponse(textBlock.text);
+    console.log(`[analysis:${label}] Parsed ${parsed.results.length} image findings`);
+    return parsed.results;
+  } catch (e) {
+    console.error(`[analysis:${label}] Image JSON parse failed:`, e);
+    return [];
+  }
+}
+
+function normalizeImageResult(r: any, index: number): AnalysisResult {
+  const driftType: DriftType = VALID_DRIFT_TYPES.includes(r.driftType)
+    ? r.driftType
+    : "Intended Use Redefinition";
+
+  const rawLevel = typeof r.driftLevel === "number" ? r.driftLevel : 2;
+  const driftLevel: DriftLevel = (rawLevel >= 0 && rawLevel <= 4 ? rawLevel : 2) as DriftLevel;
+
+  const exposureTags: ExposureTag[] = Array.isArray(r.exposureTags)
+    ? r.exposureTags.filter((t: any) => VALID_EXPOSURE_TAGS.includes(t))
+    : [];
+
+  const severity = driftLevelToSeverity(driftLevel);
+  const type = DRIFT_TYPE_TO_LEGACY[driftType];
+
+  return {
+    id: String(index + 1),
+    original: r.original || "",
+    type,
+    issue: r.issue || "Image Compliance Issue",
+    severity,
+    reason: r.reason || "",
+    suggestion: r.suggestion || "",
+    start: -1,
+    end: -1,
+    driftType,
+    driftLevel,
+    exposureTags,
+    boundaryReference: r.boundaryReference || "",
+    imageId: r.imageId || undefined,
+    imageLabel: r.imageId ? undefined : undefined, // Will be set below
+  };
+}
+
+function mapFindingsToPages(results: AnalysisResult[], pageTextRanges: PageTextRange[]): void {
+  for (const result of results) {
+    if (result.start < 0) continue; // image findings
+    for (const range of pageTextRanges) {
+      if (result.start >= range.start && result.start < range.end) {
+        result.pageNumber = range.page;
+        break;
+      }
+    }
+  }
+}
+
 export async function analyzeContent(
   profile: ProductProfile,
   claims: CoreClaim[],
   rules: PromoRule[],
-  content: string
+  content: string,
+  images?: ExtractedImage[],
+  pageTextRanges?: PageTextRange[]
 ): Promise<AnalysisResponse> {
   const systemPrompt = buildSystemPrompt(profile, claims, rules);
   const sentences = splitSentences(content);
@@ -521,32 +710,85 @@ export async function analyzeContent(
     }
   }
 
-  console.log(`[analysis] Final result count: ${results.length}`);
+  console.log(`[analysis] Text track final count: ${results.length}`);
 
-  // Sort by position in document
-  results.sort((a, b) => a.start - b.start);
+  // ── Image Analysis Track (runs in parallel with gap sweep) ──
+  let imageResults: AnalysisResult[] = [];
+  if (images && images.length > 0) {
+    console.log(`[analysis] Starting image analysis: ${images.length} images`);
+
+    // Batch images 3-4 per call
+    const imageBatchSize = 3;
+    const imageBatches: ExtractedImage[][] = [];
+    for (let i = 0; i < images.length; i += imageBatchSize) {
+      imageBatches.push(images.slice(i, i + imageBatchSize));
+    }
+
+    const imagePromises = imageBatches.map((batch, idx) =>
+      runImageAnalysisCall(systemPrompt, batch, `image-batch${idx}`)
+    );
+
+    const imageBatchResults = await Promise.all(imagePromises);
+    const allImageRawResults = imageBatchResults.flat();
+
+    console.log(`[analysis] Image analysis found ${allImageRawResults.length} findings`);
+
+    imageResults = allImageRawResults.map((r, i) => {
+      const result = normalizeImageResult(r, results.length + i);
+      // Set imageLabel from the source images
+      if (result.imageId) {
+        const sourceImage = images.find(img => img.id === result.imageId);
+        if (sourceImage) {
+          result.imageLabel = sourceImage.sourceLabel;
+        }
+      }
+      return result;
+    });
+  }
+
+  // Merge text and image results
+  const allResults = [...results, ...imageResults];
+
+  // Sort: text results by position, image results appended sorted by page number
+  const textFindings = allResults.filter(r => r.start !== -1);
+  const imgFindings = allResults.filter(r => r.start === -1);
+  textFindings.sort((a, b) => a.start - b.start);
+  imgFindings.sort((a, b) => {
+    const pageA = images?.find(img => img.id === a.imageId)?.pageNumber || 0;
+    const pageB = images?.find(img => img.id === b.imageId)?.pageNumber || 0;
+    return pageA - pageB;
+  });
+
+  let finalResults = [...textFindings, ...imgFindings];
 
   // Re-index after sort
-  results = results.map((r, i) => ({ ...r, id: String(i + 1) }));
+  finalResults = finalResults.map((r, i) => ({ ...r, id: String(i + 1) }));
+
+  // Map findings to page numbers if page ranges are available
+  if (pageTextRanges && pageTextRanges.length > 0) {
+    mapFindingsToPages(finalResults, pageTextRanges);
+  }
 
   // Compute drift level counts
   const driftLevelCounts = new Map<DriftLevel, number>();
-  for (const r of results) {
+  for (const r of finalResults) {
     driftLevelCounts.set(r.driftLevel, (driftLevelCounts.get(r.driftLevel) || 0) + 1);
   }
   const driftLevels = Array.from(driftLevelCounts.entries())
     .map(([level, count]) => ({ level, count }))
     .sort((a, b) => a.level - b.level);
 
-  console.log(`[analysis] Complete: ${results.length} issues (high=${results.filter(r => r.severity === "high").length}, medium=${results.filter(r => r.severity === "medium").length}, low=${results.filter(r => r.severity === "low").length})`);
+  const imageFindingsCount = imgFindings.length;
+  console.log(`[analysis] Complete: ${finalResults.length} issues (text=${textFindings.length}, image=${imageFindingsCount}, high=${finalResults.filter(r => r.severity === "high").length}, medium=${finalResults.filter(r => r.severity === "medium").length}, low=${finalResults.filter(r => r.severity === "low").length})`);
 
   return {
-    results,
+    results: finalResults,
     summary: {
-      total: results.length,
-      high: results.filter(r => r.severity === "high").length,
-      medium: results.filter(r => r.severity === "medium").length,
-      low: results.filter(r => r.severity === "low").length,
+      total: finalResults.length,
+      high: finalResults.filter(r => r.severity === "high").length,
+      medium: finalResults.filter(r => r.severity === "medium").length,
+      low: finalResults.filter(r => r.severity === "low").length,
+      imageFindings: imageFindingsCount > 0 ? imageFindingsCount : undefined,
       driftLevels,
     },
   };

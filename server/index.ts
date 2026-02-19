@@ -35,13 +35,13 @@ export function log(message: string, source = "express") {
             : ["'self'", "https://fonts.googleapis.com"],
           fontSrc: ["'self'", "https://fonts.gstatic.com"],
           scriptSrc: isDev
-            ? ["'self'", "'unsafe-inline'"]
-            : ["'self'"],
+            ? ["'self'", "'unsafe-inline'", "'unsafe-eval'"]
+            : ["'self'", "'wasm-unsafe-eval'"],
           connectSrc: isDev
             ? ["'self'", "wss:"]
             : ["'self'"],
           workerSrc: ["'self'", "blob:"],
-          imgSrc: ["'self'", "data:", "https://*.googleusercontent.com"],
+          imgSrc: ["'self'", "data:", "blob:", "https://*.googleusercontent.com"],
         },
       },
       crossOriginOpenerPolicy: { policy: "unsafe-none" },
@@ -61,8 +61,8 @@ export function log(message: string, source = "express") {
   );
 
   // Body parsing
-  app.use(express.json({ limit: "10mb" }));
-  app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ extended: false, limit: "50mb" }));
   app.use(cookieParser());
 
   // XSS sanitization on API routes

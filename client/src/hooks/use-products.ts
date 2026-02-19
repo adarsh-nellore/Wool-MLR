@@ -38,6 +38,21 @@ export function useProductAnalyses(profileId: number | string | undefined) {
   });
 }
 
+export type RecentAnalysis = {
+  id: number;
+  profileId: number;
+  profileName: string;
+  deviceType: string;
+  summary: { total: number; high: number; medium: number; low: number };
+  createdAt: string;
+};
+
+export function useRecentAnalyses() {
+  return useQuery<RecentAnalysis[]>({
+    queryKey: ["/api/analyses/recent"],
+  });
+}
+
 export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({

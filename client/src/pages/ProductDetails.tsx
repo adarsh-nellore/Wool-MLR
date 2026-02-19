@@ -43,8 +43,8 @@ export default function ProductDetails() {
       <Layout>
         <div className="text-center py-20 text-muted-foreground">
           <p>Product not found.</p>
-          <Button variant="ghost" className="mt-4" onClick={() => setLocation("/")}>
-            Back to Dashboard
+          <Button variant="ghost" className="mt-4" onClick={() => setLocation("/devices")}>
+            Back to Devices
           </Button>
         </div>
       </Layout>
@@ -56,7 +56,7 @@ export default function ProductDetails() {
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Button variant="ghost" size="sm" className="h-6 px-2 -ml-2 text-muted-foreground" onClick={() => setLocation("/")}>
+          <Button variant="ghost" size="sm" className="h-6 px-2 -ml-2 text-muted-foreground" onClick={() => setLocation("/devices")}>
             <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Products
           </Button>
           <span className="text-border">/</span>

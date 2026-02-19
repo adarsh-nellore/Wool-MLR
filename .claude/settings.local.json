@@ -20,7 +20,12 @@
       "Bash(ls:*)",
       "Bash(env:*)",
       "Bash(npx tsx:*)",
-      "Bash(kill:*)"
+      "Bash(kill:*)",
+      "WebFetch(domain:copli.io)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:coplio.io)"
     ]
   }
 }

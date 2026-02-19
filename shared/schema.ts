@@ -22,6 +22,7 @@ export interface ProductProfile {
   risksText: string;
   regions: string[];
   userId: string;
+  isSample?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -83,6 +84,10 @@ export const analyzeContentSchema = z.object({
   content: z.string().min(1),
 });
 
+export const analyzeUploadSchema = z.object({
+  profileId: z.coerce.number().int().positive(),
+});
+
 // ── Boundary Drift Types ──
 
 export type DriftType =
@@ -118,6 +123,9 @@ export interface AnalysisResult {
   driftLevel: DriftLevel;
   exposureTags: ExposureTag[];
   boundaryReference: string;
+  imageId?: string;
+  imageLabel?: string;
+  pageNumber?: number;
 }
 
 export interface AnalysisResponse {
@@ -127,8 +135,43 @@ export interface AnalysisResponse {
     high: number;
     medium: number;
     low: number;
+    imageFindings?: number;
     driftLevels: { level: DriftLevel; count: number }[];
   };
+}
+
+// ── Stored Image (for persisted analyses) ──
+
+export interface StoredImage {
+  id: string;
+  data: string; // base64
+  mediaType: string;
+  sourceLabel: string;
+}
+
+// ── Lead (landing page signups) ──
+
+export interface Lead {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
+export const insertLeadSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+});
+
+export type InsertLead = z.infer<typeof insertLeadSchema>;
+
+// ── Stored Document (original uploaded file) ──
+
+export interface StoredDocument {
+  data: string; // base64
+  mimeType: string;
+  fileName: string;
+  pageCount?: number;
 }
 
 // ── Stored Analysis (persisted per device) ──
@@ -139,5 +182,7 @@ export interface StoredAnalysis {
   content: string;
   results: AnalysisResult[];
   summary: AnalysisResponse["summary"];
+  images?: StoredImage[];
+  originalDocument?: StoredDocument;
   createdAt: Date;
 }
