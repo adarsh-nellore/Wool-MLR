@@ -578,7 +578,7 @@ export default function Landing() {
       </section>
 
       {/* ── Capabilities Section ── */}
-      <section className="py-28 lg:py-36 px-8 relative z-10">
+      <section className="py-24 lg:py-32 px-8 relative z-10">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial="hidden"
