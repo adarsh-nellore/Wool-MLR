@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
-import { useCreateProduct } from "@/hooks/use-products";
+import { useCreateProduct, useProducts } from "@/hooks/use-products";
 
 const formSchema = z.object({
   productName: z.string().min(2, { message: "Product name is required." }),
@@ -77,6 +77,7 @@ export default function Onboarding() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const createProduct = useCreateProduct();
+  const { data: existingProducts } = useProducts();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -129,6 +130,17 @@ export default function Onboarding() {
   };
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    // Sample mode: don't create a new profile — use the existing seeded sample
+    if (isSample) {
+      const sampleProfile = existingProducts?.find(p => p.isSample);
+      if (sampleProfile) {
+        setLocation(`/analyze?profileId=${sampleProfile.id}&loadSample=true`);
+      } else {
+        toast({ title: "Error", description: "Sample profile not found.", variant: "destructive" });
+      }
+      return;
+    }
+
     const filteredClaims = claims.filter(c => c.text.trim());
     const filteredRules = rules.filter(r => r.text.trim());
 
@@ -148,11 +160,7 @@ export default function Onboarding() {
         title: "Profile Created",
         description: "Your product profile has been successfully saved.",
       });
-      if (isSample) {
-        setLocation(`/analyze?profileId=${result.id}&loadSample=true`);
-      } else {
-        setLocation(`/product/${result.id}`);
-      }
+      setLocation(`/product/${result.id}`);
     } catch (error) {
       toast({
         title: "Error",
@@ -417,7 +425,7 @@ export default function Onboarding() {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     disabled={createProduct.isPending}
                   >
-                    {createProduct.isPending ? "Creating..." : "Create Profile"} <Check className="w-3.5 h-3.5 ml-1" />
+                    {createProduct.isPending ? "Creating..." : isSample ? "Start Analysis" : "Create Profile"} <Check className="w-3.5 h-3.5 ml-1" />
                   </Button>
                 )}
               </CardFooter>

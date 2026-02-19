@@ -2,9 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import {
   motion,
-  useScroll,
-  useTransform,
-  useSpring,
   useInView,
 } from "framer-motion";
 import {
@@ -28,27 +25,24 @@ const CALENDLY_URL = "https://calendly.com/adarsh-nellore/1-1";
 /* YarnLogo imported from Layout */
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" as const },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
 const sectionReveal = {
-  hidden: { opacity: 0, y: 48, scale: 0.98 },
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.7, ease: "easeOut" as const },
+    transition: { duration: 0.5, ease: "easeOut" as const },
   },
 };
 
 const stagger = {
   visible: {
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.08 },
   },
 };
 
@@ -118,32 +112,14 @@ const personas = [
   },
 ];
 
-/* ─── Floating Parallax Orbs (warm tones) ─── */
+/* ─── Static Background Orbs (warm tones, no scroll transforms) ─── */
 function FloatingOrbs() {
-  const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 4000], [0, -500]);
-  const y2 = useTransform(scrollY, [0, 4000], [0, -300]);
-  const y3 = useTransform(scrollY, [0, 4000], [0, -700]);
-  const y4 = useTransform(scrollY, [0, 4000], [0, -200]);
-
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      <motion.div
-        style={{ y: y1 }}
-        className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-amber-200/20 to-orange-100/10 blur-3xl lg:w-[800px] lg:h-[800px]"
-      />
-      <motion.div
-        style={{ y: y2 }}
-        className="absolute top-[30%] -right-60 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-rose-200/15 to-pink-100/8 blur-3xl lg:w-[700px] lg:h-[700px]"
-      />
-      <motion.div
-        style={{ y: y3 }}
-        className="absolute top-[60%] left-[15%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-stone-300/12 to-amber-200/8 blur-3xl hidden lg:block lg:w-[550px] lg:h-[550px]"
-      />
-      <motion.div
-        style={{ y: y4 }}
-        className="absolute top-[10%] left-[50%] w-[300px] h-[300px] rounded-full bg-gradient-to-br from-teal-200/10 to-emerald-100/6 blur-3xl hidden lg:block lg:w-[400px] lg:h-[400px]"
-      />
+      <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-amber-200/20 to-orange-100/10 blur-3xl lg:w-[800px] lg:h-[800px]" />
+      <div className="absolute top-[30%] -right-60 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-rose-200/15 to-pink-100/8 blur-3xl lg:w-[700px] lg:h-[700px]" />
+      <div className="absolute top-[60%] left-[15%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-stone-300/12 to-amber-200/8 blur-3xl hidden lg:block lg:w-[550px] lg:h-[550px]" />
+      <div className="absolute top-[10%] left-[50%] w-[300px] h-[300px] rounded-full bg-gradient-to-br from-teal-200/10 to-emerald-100/6 blur-3xl hidden lg:block lg:w-[400px] lg:h-[400px]" />
     </div>
   );
 }
@@ -385,10 +361,6 @@ function HeroMockup() {
 export default function Landing() {
   const [, setLocation] = useLocation();
   const [scrolled, setScrolled] = useState(false);
-  const { scrollY } = useScroll();
-
-  const mockupRawY = useTransform(scrollY, [0, 800], [0, -60]);
-  const mockupY = useSpring(mockupRawY, { stiffness: 80, damping: 25 });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -515,10 +487,9 @@ export default function Landing() {
 
             {/* Right column - Animated Mockup */}
             <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
-              style={{ y: mockupY }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
               className="lg:scale-110"
             >
               <HeroMockup />

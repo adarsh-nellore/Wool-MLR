@@ -193,3 +193,61 @@
   .animate-float { animation: float-gentle 4s ease-in-out infinite; }
   .animate-float-delayed { animation: float-gentle 5s ease-in-out 1s infinite; }
 }
+
+/* ── Analysis Highlight Styles ── */
+
+.highlight-high {
+  background: rgba(220, 38, 38, 0.18);
+  border-bottom: 2px solid rgba(220, 38, 38, 0.6);
+  border-radius: 1px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.highlight-medium {
+  background: rgba(217, 119, 6, 0.14);
+  border-bottom: 2px dashed rgba(217, 119, 6, 0.5);
+  border-radius: 1px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.highlight-low {
+  background: rgba(59, 130, 246, 0.08);
+  border-bottom: 1px dotted rgba(59, 130, 246, 0.5);
+  border-radius: 1px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.highlight-high:hover, .highlight-high[data-hovered="true"] {
+  background: rgba(220, 38, 38, 0.3);
+  border-bottom-color: rgba(220, 38, 38, 0.8);
+}
+.highlight-medium:hover, .highlight-medium[data-hovered="true"] {
+  background: rgba(217, 119, 6, 0.25);
+  border-bottom-color: rgba(217, 119, 6, 0.7);
+}
+.highlight-low:hover, .highlight-low[data-hovered="true"] {
+  background: rgba(59, 130, 246, 0.16);
+  border-bottom-color: rgba(59, 130, 246, 0.7);
+}
+
+.highlight-high[data-selected="true"] {
+  background: rgba(220, 38, 38, 0.35);
+  border-bottom: 2px solid rgba(220, 38, 38, 0.9);
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.4);
+}
+.highlight-medium[data-selected="true"] {
+  background: rgba(217, 119, 6, 0.3);
+  border-bottom: 2px solid rgba(217, 119, 6, 0.8);
+  box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.3);
+}
+.highlight-low[data-selected="true"] {
+  background: rgba(59, 130, 246, 0.2);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.7);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+/* ContentEditable document styles */
+[contenteditable="true"]:focus { outline: none; }
+[contenteditable="true"] h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+[contenteditable="true"] p { margin-bottom: 1rem; font-size: 1.125rem; line-height: 1.75; font-family: Georgia, serif; }

@@ -4,13 +4,15 @@ import type { AnalysisResponse, StoredImage, StoredDocument } from "@shared/sche
 
 export function useAnalysis() {
   const queryClient = useQueryClient();
-  return useMutation<AnalysisResponse, Error, { profileId: number; content: string }>({
+  return useMutation<AnalysisResponse, Error, { profileId: number; content: string; ephemeral?: boolean }>({
     mutationFn: async (data) => {
       const res = await apiRequest("POST", "/api/analyze", data);
       return res.json();
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/products/${variables.profileId}/analyses`] });
+      if (!variables.ephemeral) {
+        queryClient.invalidateQueries({ queryKey: [`/api/products/${variables.profileId}/analyses`] });
+      }
     },
   });
 }

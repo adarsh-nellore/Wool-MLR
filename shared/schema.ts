@@ -82,6 +82,7 @@ export const updateProductSchema = z.object({
 export const analyzeContentSchema = z.object({
   profileId: z.number().int().positive(),
   content: z.string().min(1),
+  ephemeral: z.boolean().optional(),
 });
 
 export const analyzeUploadSchema = z.object({

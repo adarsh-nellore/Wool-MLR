@@ -28,8 +28,8 @@ export function registerAnalysisRoutes(app: Express): void {
         return res.status(400).json({ error: "Validation failed", details: parsed.error.errors });
       }
 
-      const { profileId, content } = parsed.data;
-      console.log(`[analyze route] profileId=${profileId}, content length=${content.length}, userId=${userId}`);
+      const { profileId, content, ephemeral } = parsed.data;
+      console.log(`[analyze route] profileId=${profileId}, content length=${content.length}, userId=${userId}, ephemeral=${!!ephemeral}`);
 
       // Verify profile ownership
       const profile = await storage.getProfileById(profileId);
@@ -53,8 +53,10 @@ export function registerAnalysisRoutes(app: Express): void {
       const result = await analyzeContent(profile, claims, rules, content);
       console.log(`[analyze route] Analysis complete: ${result.summary.total} issues found`);
 
-      // Persist analysis under this device profile
-      await storage.saveAnalysis(profileId, content, result);
+      // Persist analysis under this device profile (skip for ephemeral/sample runs)
+      if (!ephemeral) {
+        await storage.saveAnalysis(profileId, content, result);
+      }
 
       res.json(result);
     } catch (error: any) {

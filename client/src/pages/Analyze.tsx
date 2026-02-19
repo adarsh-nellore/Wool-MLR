@@ -25,6 +25,12 @@ import {
   Image as ImageIcon,
   FileImage,
   Share2,
+  Bold,
+  Italic,
+  Underline,
+  Type,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -118,63 +124,7 @@ function getHighlightClass(severity: string): string {
   return 'highlight-low';
 }
 
-// CSS for highlight states — injected once
-const HIGHLIGHT_STYLES = `
-  .highlight-high {
-    background: rgba(220, 38, 38, 0.18);
-    border-bottom: 2px solid rgba(220, 38, 38, 0.6);
-    border-radius: 1px;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .highlight-medium {
-    background: rgba(217, 119, 6, 0.14);
-    border-bottom: 2px dashed rgba(217, 119, 6, 0.5);
-    border-radius: 1px;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .highlight-low {
-    background: rgba(59, 130, 246, 0.08);
-    border-bottom: 1px dotted rgba(59, 130, 246, 0.5);
-    border-radius: 1px;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-  }
-
-  .highlight-high:hover, .highlight-high[data-hovered="true"] {
-    background: rgba(220, 38, 38, 0.3);
-    border-bottom-color: rgba(220, 38, 38, 0.8);
-  }
-  .highlight-medium:hover, .highlight-medium[data-hovered="true"] {
-    background: rgba(217, 119, 6, 0.25);
-    border-bottom-color: rgba(217, 119, 6, 0.7);
-  }
-  .highlight-low:hover, .highlight-low[data-hovered="true"] {
-    background: rgba(59, 130, 246, 0.16);
-    border-bottom-color: rgba(59, 130, 246, 0.7);
-  }
-
-  .highlight-high[data-selected="true"] {
-    background: rgba(220, 38, 38, 0.35);
-    border-bottom: 2px solid rgba(220, 38, 38, 0.9);
-    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.4);
-  }
-  .highlight-medium[data-selected="true"] {
-    background: rgba(217, 119, 6, 0.3);
-    border-bottom: 2px solid rgba(217, 119, 6, 0.8);
-    box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.3);
-  }
-  .highlight-low[data-selected="true"] {
-    background: rgba(59, 130, 246, 0.2);
-    border-bottom: 2px solid rgba(59, 130, 246, 0.7);
-    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
-  }
-
-  [contenteditable="true"]:focus { outline: none; }
-  [contenteditable="true"] h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
-  [contenteditable="true"] p { margin-bottom: 1rem; font-size: 1.125rem; line-height: 1.75; font-family: Georgia, serif; }
-`;
+// Highlight styles are in index.css (must be in a real stylesheet for production CSP)
 
 function isHeadingLine(line: string): boolean {
   const trimmed = line.trim();
@@ -217,17 +167,6 @@ export default function Analyze() {
   const { data: products } = useProducts();
   const analysis = useAnalysis();
   const uploadAnalysis = useAnalysisUpload();
-
-  // Inject highlight CSS once
-  useEffect(() => {
-    const id = "highlight-styles";
-    if (!document.getElementById(id)) {
-      const style = document.createElement("style");
-      style.id = id;
-      style.textContent = HIGHLIGHT_STYLES;
-      document.head.appendChild(style);
-    }
-  }, []);
 
   // Load a stored analysis if analysisId is provided
   useEffect(() => {
@@ -597,8 +536,9 @@ export default function Analyze() {
         }
       );
     } else {
+      const isEphemeral = loadSampleParam === "true";
       analysis.mutate(
-        { profileId: parseInt(selectedProfileId, 10), content },
+        { profileId: parseInt(selectedProfileId, 10), content, ephemeral: isEphemeral || undefined },
         {
           onSuccess: (data) => {
             setResults(data.results);
@@ -760,6 +700,13 @@ export default function Analyze() {
   }, [hoveredIssueId]);
 
   const selectedProfileName = products?.find(p => String(p.id) === selectedProfileId)?.name || "Select Profile";
+
+  const [fontSize, setFontSize] = useState(18);
+
+  const execFormat = useCallback((command: string, value?: string) => {
+    document.execCommand(command, false, value);
+    editableRef.current?.focus();
+  }, []);
 
   const filteredResults = useMemo(() => {
     if (!results) return null;
@@ -1155,13 +1102,78 @@ export default function Analyze() {
                        )}
                      </div>
                    ) : (
-                     /* Text editor fallback */
-                     <div className="mx-auto min-h-[900px] bg-white rounded-md shadow-sm border border-border/60 p-10 relative">
+                     /* Text editor with formatting toolbar */
+                     <div className="mx-auto min-h-[900px] bg-white rounded-md shadow-sm border border-border/60 relative">
+                        {/* Formatting Toolbar */}
+                        <div className="sticky top-0 z-10 flex items-center gap-1 px-4 py-1.5 border-b border-border/40 bg-white/95 backdrop-blur-sm rounded-t-md">
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title="Bold"
+                            onMouseDown={(e) => { e.preventDefault(); execFormat('bold'); }}
+                          >
+                            <Bold className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title="Italic"
+                            onMouseDown={(e) => { e.preventDefault(); execFormat('italic'); }}
+                          >
+                            <Italic className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title="Underline"
+                            onMouseDown={(e) => { e.preventDefault(); execFormat('underline'); }}
+                          >
+                            <Underline className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-px h-4 bg-border/60 mx-1" />
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title="Decrease font size"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setFontSize(prev => {
+                                const next = Math.max(12, prev - 2);
+                                if (editableRef.current) editableRef.current.style.fontSize = `${next}px`;
+                                return next;
+                              });
+                            }}
+                          >
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-[11px] text-muted-foreground tabular-nums w-8 text-center select-none">{fontSize}</span>
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title="Increase font size"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setFontSize(prev => {
+                                const next = Math.min(32, prev + 2);
+                                if (editableRef.current) editableRef.current.style.fontSize = `${next}px`;
+                                return next;
+                              });
+                            }}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="w-px h-4 bg-border/60 mx-1" />
+                          <button
+                            className="w-7 h-7 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                            title="Heading"
+                            onMouseDown={(e) => { e.preventDefault(); execFormat('formatBlock', 'h3'); }}
+                          >
+                            <Type className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="p-10">
                         <div
                           ref={editableRef}
                           contentEditable
                           suppressContentEditableWarning
                           className="text-foreground min-h-[800px] focus:outline-none"
+                          style={{ fontSize: `${fontSize}px` }}
                           dangerouslySetInnerHTML={{ __html: highlightedHTML || '<p style="font-family: Georgia, serif; font-size: 1.125rem; line-height: 1.75; color: #a1a1aa;">Paste or type your content here...</p>' }}
                           onBlur={(e) => {
                             const newText = e.currentTarget.innerText.trim();
@@ -1238,6 +1250,7 @@ export default function Analyze() {
                             </div>
                           </div>
                         )}
+                     </div>
                      </div>
                    )}
                 </div>
