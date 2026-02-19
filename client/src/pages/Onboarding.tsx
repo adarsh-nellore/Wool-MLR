@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useCreateProduct } from "@/hooks/use-products";
 
 const formSchema = z.object({
@@ -47,13 +47,30 @@ const DEFAULT_RULES = [
   "Always include at least one risk/limitation statement in any asset that contains benefit claims.",
 ];
 
+const SAMPLE_DATA = {
+  productName: "CardioFlow X1",
+  deviceType: "implant",
+  description: "Next-generation cardiac catheter system for minimally invasive coronary interventions.",
+  indications: "The CardioFlow X1 Catheter System is indicated for use in percutaneous coronary interventions (PCI) including balloon angioplasty and stent delivery in adult patients with coronary artery disease. The device is intended for use by trained interventional cardiologists in a catheterization laboratory setting.",
+  risks: "Contraindicated in patients with known hypersensitivity to catheter materials (polyurethane, silicone). Not indicated for use in pediatric patients. Risks include vessel perforation, dissection, thrombosis, distal embolization, and arrhythmia. Use caution in patients with severely calcified lesions or chronic total occlusions. Device should not be re-sterilized or reused.",
+  claims: [
+    "Designed to facilitate rapid lesion crossing in coronary interventions.",
+    "Low-profile catheter tip may help reduce procedural time.",
+    "Compatible with standard 6F guide catheters for broad procedural flexibility.",
+  ],
+};
+
 export default function Onboarding() {
+  const searchString = useSearch();
+  const params = new URLSearchParams(searchString);
+  const isSample = params.get("sample") === "true";
+
   const [step, setStep] = useState(1);
-  const [claims, setClaims] = useState([
-    { id: 1, text: "" },
-    { id: 2, text: "" },
-    { id: 3, text: "" },
-  ]);
+  const [claims, setClaims] = useState(
+    isSample
+      ? SAMPLE_DATA.claims.map((text, i) => ({ id: i + 1, text }))
+      : [{ id: 1, text: "" }, { id: 2, text: "" }, { id: 3, text: "" }]
+  );
   const [rules, setRules] = useState(
     DEFAULT_RULES.map((text, i) => ({ id: i + 1, text, isDefault: true }))
   );
@@ -63,13 +80,21 @@ export default function Onboarding() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      productName: "",
-      deviceType: "",
-      description: "",
-      indications: "",
-      risks: "",
-    },
+    defaultValues: isSample
+      ? {
+          productName: SAMPLE_DATA.productName,
+          deviceType: SAMPLE_DATA.deviceType,
+          description: SAMPLE_DATA.description,
+          indications: SAMPLE_DATA.indications,
+          risks: SAMPLE_DATA.risks,
+        }
+      : {
+          productName: "",
+          deviceType: "",
+          description: "",
+          indications: "",
+          risks: "",
+        },
   });
 
   const nextStep = async () => {
@@ -123,7 +148,11 @@ export default function Onboarding() {
         title: "Profile Created",
         description: "Your product profile has been successfully saved.",
       });
-      setLocation(`/product/${result.id}`);
+      if (isSample) {
+        setLocation(`/analyze?profileId=${result.id}&loadSample=true`);
+      } else {
+        setLocation(`/product/${result.id}`);
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -154,10 +183,20 @@ export default function Onboarding() {
     <Layout>
       <div className="max-w-2xl mx-auto py-4">
 
+        {/* Sample banner */}
+        {isSample && (
+          <div className="mb-4 bg-amber-50 border border-amber-200/60 rounded-lg px-4 py-3 flex items-center gap-2.5 text-sm text-amber-800">
+            <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+            <p>
+              <span className="font-semibold">Sample walkthrough</span> — Review the pre-filled device profile, then you'll analyze a sample marketing document.
+            </p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl font-semibold tracking-tight">Create Product Profile</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Define the compliance context for your device.</p>
+          <h1 className="text-xl font-semibold tracking-tight">{isSample ? "Review Sample Profile" : "Create Product Profile"}</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{isSample ? "Walk through the sample device profile, then analyze a marketing document." : "Define the compliance context for your device."}</p>
         </div>
 
         {/* Step Indicator */}

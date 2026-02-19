@@ -605,6 +605,13 @@ export default function Analyze() {
     }
   };
 
+  const dismissFinding = (id: string) => {
+    setResults(prev => prev?.filter(r => r.id !== id) || null);
+    if (selectedIssueId === id) setSelectedIssueId(null);
+    if (hoveredIssueId === id) setHoveredIssueId(null);
+    toast({ title: "Dismissed", description: "Finding removed from review." });
+  };
+
   const resetAnalysis = () => {
      setStep("input");
      setResults(null);
@@ -1252,15 +1259,22 @@ export default function Analyze() {
                             <span className={`text-xs font-semibold ${riskScore.color}`}>{riskScore.label}</span>
                          </div>
 
-                         {/* Risk bar — segmented gauge */}
+                         {/* Risk bar — proportional gauge */}
                          <div className="relative">
-                            <div className="flex h-2.5 rounded-full overflow-hidden bg-muted/40 gap-[1px]">
-                               {/* 5 segments representing the scale */}
-                               <div className={`flex-1 rounded-l-full transition-colors duration-500 ${riskScore.score >= 10 ? 'bg-emerald-400' : 'bg-muted/60'}`} />
-                               <div className={`flex-1 transition-colors duration-500 ${riskScore.score >= 20 ? 'bg-yellow-400' : 'bg-muted/60'}`} />
-                               <div className={`flex-1 transition-colors duration-500 ${riskScore.score >= 35 ? 'bg-amber-400' : 'bg-muted/60'}`} />
-                               <div className={`flex-1 transition-colors duration-500 ${riskScore.score >= 50 ? 'bg-orange-500' : 'bg-muted/60'}`} />
-                               <div className={`flex-1 rounded-r-full transition-colors duration-500 ${riskScore.score >= 70 ? 'bg-red-500' : 'bg-muted/60'}`} />
+                            <div className="h-2.5 rounded-full overflow-hidden bg-muted/40 relative">
+                               {/* Proportional fill based on score */}
+                               <div
+                                 className={`h-full rounded-full transition-all duration-700 ease-out ${riskScore.barColor}`}
+                                 style={{ width: `${Math.max(riskScore.score, 2)}%` }}
+                               />
+                               {/* Threshold marks */}
+                               <div className="absolute inset-0 flex">
+                                 <div className="flex-1 border-r border-white/30" />
+                                 <div className="flex-1 border-r border-white/30" />
+                                 <div className="flex-1 border-r border-white/30" />
+                                 <div className="flex-1 border-r border-white/30" />
+                                 <div className="flex-1" />
+                               </div>
                             </div>
                             {/* Needle/indicator */}
                             <div
@@ -1395,6 +1409,13 @@ export default function Analyze() {
                                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm ml-auto shrink-0 leading-none ${severityConfig.badgeBg}`}>
                                           {severityConfig.badgeLabel}
                                        </span>
+                                       <button
+                                         className="shrink-0 w-5 h-5 rounded-sm flex items-center justify-center text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                         title="Dismiss finding"
+                                         onClick={(e) => { e.stopPropagation(); dismissFinding(result.id); }}
+                                       >
+                                         <X className="w-3 h-3" />
+                                       </button>
                                     </div>
                                     {result.imageId ? (
                                       <div className="pl-6">

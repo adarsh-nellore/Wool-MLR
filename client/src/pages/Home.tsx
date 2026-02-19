@@ -78,7 +78,7 @@ export default function Home() {
                   <Card
                     key={product.id}
                     className="group hover:shadow-md transition-all duration-200 cursor-pointer border-border/60 hover:border-primary/30"
-                    onClick={() => product.isSample ? setLocation(`/analyze?profileId=${product.id}&loadSample=true`) : setLocation(`/product/${product.id}`)}
+                    onClick={() => product.isSample ? setLocation(`/onboarding?sample=true`) : setLocation(`/product/${product.id}`)}
                   >
                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                       <div className="flex items-center gap-2.5">

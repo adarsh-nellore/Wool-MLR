@@ -177,23 +177,24 @@ function HeroMockup() {
     { color: "red", delay: 1.5 },
     { color: "amber", delay: 2.2 },
     { color: "red", delay: 2.9 },
+    { color: "amber", delay: 3.5 },
   ];
 
   return (
     <div className="relative" ref={scoreRef}>
       {/* Floating annotation badges */}
-      <div className="hidden lg:block absolute -top-6 -right-8 animate-float z-20">
-        <div className="bg-white/70 backdrop-blur-md border border-stone-200/60 shadow-lg shadow-stone-900/5 rounded-full px-4 py-2 text-xs font-medium text-stone-700">
+      <div className="hidden lg:block absolute -top-7 -right-10 animate-float z-20">
+        <div className="bg-white/80 backdrop-blur-md border border-stone-200/60 shadow-lg shadow-stone-900/5 rounded-full px-5 py-2.5 text-xs font-medium text-stone-700">
           FDA 21 CFR 820
         </div>
       </div>
-      <div className="hidden lg:block absolute bottom-12 -left-10 animate-float-delayed z-20">
-        <div className="bg-white/70 backdrop-blur-md border border-stone-200/60 shadow-lg shadow-stone-900/5 rounded-full px-4 py-2 text-xs font-medium text-amber-700">
+      <div className="hidden lg:block absolute bottom-16 -left-12 animate-float-delayed z-20">
+        <div className="bg-white/80 backdrop-blur-md border border-stone-200/60 shadow-lg shadow-stone-900/5 rounded-full px-5 py-2.5 text-xs font-medium text-amber-700">
           3 issues found
         </div>
       </div>
-      <div className="hidden lg:block absolute top-1/2 -right-12 animate-float z-20" style={{ animationDelay: "0.5s" }}>
-        <div className="bg-white/70 backdrop-blur-md border border-stone-200/60 shadow-lg shadow-stone-900/5 rounded-full px-4 py-2 text-xs font-medium text-emerald-700">
+      <div className="hidden lg:block absolute top-1/2 -right-14 animate-float z-20" style={{ animationDelay: "0.5s" }}>
+        <div className="bg-white/80 backdrop-blur-md border border-stone-200/60 shadow-lg shadow-stone-900/5 rounded-full px-5 py-2.5 text-xs font-medium text-emerald-700">
           Auto-scan
         </div>
       </div>
@@ -203,7 +204,7 @@ function HeroMockup() {
 
       <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-stone-900/10 border border-stone-200/60 bg-white/70 backdrop-blur-xl">
         {/* Title bar */}
-        <div className="flex items-center gap-2.5 px-5 py-3 border-b border-stone-200/50 bg-stone-50/80">
+        <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-stone-200/50 bg-stone-50/80">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-400/60" />
             <div className="w-3 h-3 rounded-full bg-amber-400/60" />
@@ -619,7 +620,7 @@ export default function Landing() {
       </section>
 
       {/* ── Personas Section ── */}
-      <section className="py-28 lg:py-36 px-8 relative z-10 border-y border-stone-200/40 bg-white/30 backdrop-blur-md">
+      <section className="py-24 lg:py-32 px-8 relative z-10 border-y border-stone-200/40 bg-white/30 backdrop-blur-md">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial="hidden"
@@ -661,7 +662,7 @@ export default function Landing() {
 
       {/* ── CTA Banner ── */}
       <section
-        className="py-28 lg:py-36 px-8 text-white relative z-10 overflow-hidden"
+        className="py-24 lg:py-32 px-8 text-white relative z-10 overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #1c1917 0%, #292524 40%, #1c1917 70%, #0c0a09 100%)",
         }}
@@ -720,7 +721,7 @@ export default function Landing() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-stone-200/40 py-12 px-8 bg-white/50 backdrop-blur-xl relative z-10">
+      <footer className="border-t border-stone-200/40 py-10 px-8 bg-white/50 backdrop-blur-xl relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
             <WoolLogo className="w-7 h-7 text-stone-500" />
