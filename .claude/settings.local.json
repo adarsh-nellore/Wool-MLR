@@ -25,7 +25,10 @@
       "Bash(timeout 10 npm run dev:*)",
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "WebFetch(domain:coplio.io)"
+      "WebFetch(domain:coplio.io)",
+      "Bash(find:*)",
+      "Bash(echo:*)",
+      "Bash(PGPASSWORD=password psql:*)"
     ]
   }
 }

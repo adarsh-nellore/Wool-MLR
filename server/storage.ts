@@ -11,6 +11,11 @@ import type {
   Lead,
   InsertLead,
 } from "@shared/schema";
+import pg from "pg";
+
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 export interface IStorage {
   // User ops
@@ -51,8 +56,6 @@ export class MemStorage implements IStorage {
   private nextRuleId = 1;
   private analyses = new Map<number, StoredAnalysis>();
   private nextAnalysisId = 1;
-  private leads = new Map<number, Lead>();
-  private nextLeadId = 1;
 
   // ── Users ──
   async getUser(id: string): Promise<User | undefined> {
@@ -215,20 +218,24 @@ export class MemStorage implements IStorage {
       .slice(0, limit);
   }
 
-  // ── Leads ──
+  // ── Leads (persisted to PostgreSQL) ──
   async createLead(data: InsertLead): Promise<Lead> {
-    const lead: Lead = {
-      id: this.nextLeadId++,
-      name: data.name,
-      email: data.email,
-      createdAt: new Date(),
-    };
-    this.leads.set(lead.id, lead);
-    return lead;
+    const result = await pool.query(
+      "INSERT INTO leads (name, email) VALUES ($1, $2) RETURNING id, name, email, created_at",
+      [data.name, data.email]
+    );
+    const row = result.rows[0];
+    return { id: row.id, name: row.name, email: row.email, createdAt: row.created_at };
   }
 
   async getLeads(): Promise<Lead[]> {
-    return Array.from(this.leads.values()).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const result = await pool.query("SELECT id, name, email, created_at FROM leads ORDER BY created_at DESC");
+    return result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      createdAt: row.created_at,
+    }));
   }
 }
 
