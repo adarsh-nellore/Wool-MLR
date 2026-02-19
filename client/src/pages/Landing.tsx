@@ -16,9 +16,13 @@ import {
   Stethoscope,
   Scale,
   Megaphone,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { WoolLogo } from "@/components/Layout";
+import { apiRequest } from "@/lib/queryClient";
 
 const CALENDLY_URL = "https://calendly.com/adarsh-nellore/1-1";
 
@@ -361,6 +365,11 @@ function HeroMockup() {
 export default function Landing() {
   const [, setLocation] = useLocation();
   const [scrolled, setScrolled] = useState(false);
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -394,12 +403,6 @@ export default function Landing() {
                 Wool
               </span>
             </div>
-            <button
-              onClick={() => setLocation("/devices")}
-              className="text-sm text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
-            >
-              Devices
-            </button>
           </div>
           <div className="flex items-center gap-3">
             <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
@@ -662,31 +665,74 @@ export default function Landing() {
           >
             Join teams that have cut their compliance review time by 10x.
           </motion.p>
-          <motion.div
-            variants={fadeUp}
-            className="mt-12 flex flex-wrap items-center justify-center gap-4"
-          >
-            <Button
-              size="lg"
-              className="bg-white text-stone-900 hover:bg-stone-100 text-sm px-8 py-6 font-semibold shadow-lg shadow-white/10 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
-              onClick={() => setLocation("/devices")}
-            >
-              Try It Now
-              <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-stone-600 text-stone-300 hover:bg-stone-800 hover:text-white text-sm px-8 py-6"
+          <motion.div variants={fadeUp} className="mt-12">
+            {submitted ? (
+              <div className="flex items-center justify-center gap-2 text-emerald-400 text-lg font-medium">
+                <CheckCircle className="w-5 h-5" />
+                Thanks! Redirecting you now...
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setFormError("");
+                  setSubmitting(true);
+                  try {
+                    await apiRequest("POST", "/api/leads", { name: leadName, email: leadEmail });
+                    setSubmitted(true);
+                    setTimeout(() => setLocation("/devices"), 1500);
+                  } catch {
+                    setFormError("Something went wrong. Please try again.");
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto"
               >
-                Book a Call
-              </Button>
-            </a>
+                <Input
+                  type="text"
+                  placeholder="Your name"
+                  required
+                  value={leadName}
+                  onChange={(e) => setLeadName(e.target.value)}
+                  className="h-12 bg-white/10 border-stone-600 text-white placeholder:text-stone-500 focus:border-white/40"
+                />
+                <Input
+                  type="email"
+                  placeholder="Your email"
+                  required
+                  value={leadEmail}
+                  onChange={(e) => setLeadEmail(e.target.value)}
+                  className="h-12 bg-white/10 border-stone-600 text-white placeholder:text-stone-500 focus:border-white/40"
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={submitting}
+                  className="h-12 bg-white text-stone-900 hover:bg-stone-100 text-sm px-8 font-semibold shadow-lg shadow-white/10 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 shrink-0"
+                >
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Get Access <ArrowRight className="ml-2 w-4 h-4" /></>}
+                </Button>
+              </form>
+            )}
+            {formError && (
+              <p className="text-red-400 text-sm mt-3">{formError}</p>
+            )}
+            <div className="mt-6 flex justify-center">
+              <a
+                href={CALENDLY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-stone-600 text-stone-300 hover:bg-stone-800 hover:text-white text-sm px-8 py-6"
+                >
+                  Book a Call
+                </Button>
+              </a>
+            </div>
           </motion.div>
         </motion.div>
       </section>
@@ -709,12 +755,6 @@ export default function Landing() {
             >
               Contact
             </a>
-            <button
-              onClick={() => setLocation("/devices")}
-              className="text-sm text-stone-400 hover:text-stone-700 transition-colors cursor-pointer"
-            >
-              Try It Now
-            </button>
           </nav>
           <p className="text-stone-300 text-xs">
             &copy; 2026 Wool
