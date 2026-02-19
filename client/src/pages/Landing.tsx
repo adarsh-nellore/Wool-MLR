@@ -365,7 +365,8 @@ function HeroMockup() {
 export default function Landing() {
   const [, setLocation] = useLocation();
   const [scrolled, setScrolled] = useState(false);
-  const [leadName, setLeadName] = useState("");
+  const [leadFirstName, setLeadFirstName] = useState("");
+  const [leadLastName, setLeadLastName] = useState("");
   const [leadEmail, setLeadEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -462,29 +463,70 @@ export default function Landing() {
               </motion.p>
               <motion.div
                 variants={fadeUp}
-                className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-4"
+                className="mt-12 max-w-lg mx-auto lg:mx-0"
               >
-                <Button
-                  size="lg"
-                  className="bg-stone-900 text-white hover:bg-stone-800 text-sm px-8 py-6 shadow-lg shadow-stone-900/15 transition-all duration-300 hover:shadow-xl hover:shadow-stone-900/20 hover:-translate-y-0.5"
-                  onClick={() => setLocation("/devices")}
-                >
-                  Try It Now
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-                <a
-                  href={CALENDLY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="text-sm px-8 py-6 border-stone-300/60 text-stone-600 hover:bg-stone-50 hover:border-stone-400/60"
+                {submitted ? (
+                  <div className="flex items-center justify-center lg:justify-start gap-2 text-emerald-600 text-lg font-medium">
+                    <CheckCircle className="w-5 h-5" />
+                    Thanks! Redirecting you now...
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      setFormError("");
+                      setSubmitting(true);
+                      try {
+                        await apiRequest("POST", "/api/leads", { name: `${leadFirstName} ${leadLastName}`, email: leadEmail });
+                        setSubmitted(true);
+                        setTimeout(() => setLocation("/devices"), 1500);
+                      } catch {
+                        setFormError("Something went wrong. Please try again.");
+                      } finally {
+                        setSubmitting(false);
+                      }
+                    }}
+                    className="space-y-3"
                   >
-                    Book a Call
-                  </Button>
-                </a>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Input
+                        type="text"
+                        placeholder="First name"
+                        required
+                        value={leadFirstName}
+                        onChange={(e) => setLeadFirstName(e.target.value)}
+                        className="h-12 bg-white/70 border-stone-200/60 placeholder:text-stone-400 focus:border-stone-400"
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Last name"
+                        required
+                        value={leadLastName}
+                        onChange={(e) => setLeadLastName(e.target.value)}
+                        className="h-12 bg-white/70 border-stone-200/60 placeholder:text-stone-400 focus:border-stone-400"
+                      />
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        required
+                        value={leadEmail}
+                        onChange={(e) => setLeadEmail(e.target.value)}
+                        className="h-12 bg-white/70 border-stone-200/60 placeholder:text-stone-400 focus:border-stone-400"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={submitting}
+                      className="w-full sm:w-auto h-12 bg-stone-900 text-white hover:bg-stone-800 text-sm px-8 font-semibold shadow-lg shadow-stone-900/15 transition-all duration-300 hover:shadow-xl hover:shadow-stone-900/20 hover:-translate-y-0.5"
+                    >
+                      {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Get Access <ArrowRight className="ml-2 w-4 h-4" /></>}
+                    </Button>
+                  </form>
+                )}
+                {formError && (
+                  <p className="text-red-500 text-sm mt-3">{formError}</p>
+                )}
               </motion.div>
             </motion.div>
 
@@ -665,74 +707,28 @@ export default function Landing() {
           >
             Join teams that have cut their compliance review time by 10x.
           </motion.p>
-          <motion.div variants={fadeUp} className="mt-12">
-            {submitted ? (
-              <div className="flex items-center justify-center gap-2 text-emerald-400 text-lg font-medium">
-                <CheckCircle className="w-5 h-5" />
-                Thanks! Redirecting you now...
-              </div>
-            ) : (
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setFormError("");
-                  setSubmitting(true);
-                  try {
-                    await apiRequest("POST", "/api/leads", { name: leadName, email: leadEmail });
-                    setSubmitted(true);
-                    setTimeout(() => setLocation("/devices"), 1500);
-                  } catch {
-                    setFormError("Something went wrong. Please try again.");
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto"
+          <motion.div variants={fadeUp} className="mt-12 flex flex-wrap items-center justify-center gap-4">
+            <Button
+              size="lg"
+              className="bg-white text-stone-900 hover:bg-stone-100 text-sm px-8 py-6 font-semibold shadow-lg shadow-white/10 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            >
+              Get Started
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+            <a
+              href={CALENDLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-stone-600 text-stone-300 hover:bg-stone-800 hover:text-white text-sm px-8 py-6"
               >
-                <Input
-                  type="text"
-                  placeholder="Your name"
-                  required
-                  value={leadName}
-                  onChange={(e) => setLeadName(e.target.value)}
-                  className="h-12 bg-white/10 border-stone-600 text-white placeholder:text-stone-500 focus:border-white/40"
-                />
-                <Input
-                  type="email"
-                  placeholder="Your email"
-                  required
-                  value={leadEmail}
-                  onChange={(e) => setLeadEmail(e.target.value)}
-                  className="h-12 bg-white/10 border-stone-600 text-white placeholder:text-stone-500 focus:border-white/40"
-                />
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={submitting}
-                  className="h-12 bg-white text-stone-900 hover:bg-stone-100 text-sm px-8 font-semibold shadow-lg shadow-white/10 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 shrink-0"
-                >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Get Access <ArrowRight className="ml-2 w-4 h-4" /></>}
-                </Button>
-              </form>
-            )}
-            {formError && (
-              <p className="text-red-400 text-sm mt-3">{formError}</p>
-            )}
-            <div className="mt-6 flex justify-center">
-              <a
-                href={CALENDLY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-stone-600 text-stone-300 hover:bg-stone-800 hover:text-white text-sm px-8 py-6"
-                >
-                  Book a Call
-                </Button>
-              </a>
-            </div>
+                Book a Call
+              </Button>
+            </a>
           </motion.div>
         </motion.div>
       </section>
