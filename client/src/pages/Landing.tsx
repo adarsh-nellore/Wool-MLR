@@ -409,8 +409,8 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2.5">
-              <YarnLogo className="w-8 h-8 text-stone-800" />
-              <span className="font-semibold text-base tracking-tight text-stone-900">
+              <WoolLogo className="w-9 h-9 text-stone-800" />
+              <span className="font-serif text-lg font-semibold tracking-tight text-stone-900">
                 Wool
               </span>
             </div>
@@ -716,8 +716,8 @@ export default function Landing() {
       <footer className="border-t border-stone-200/40 py-12 px-8 bg-white/50 backdrop-blur-xl relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <YarnLogo className="w-6 h-6 text-stone-500" />
-            <span className="text-sm font-medium text-stone-400">
+            <WoolLogo className="w-7 h-7 text-stone-500" />
+            <span className="text-sm font-serif font-medium text-stone-400">
               Wool
             </span>
           </div>

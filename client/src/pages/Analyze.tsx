@@ -15,7 +15,6 @@ import {
   ChevronDown,
   PanelRightClose,
   PanelRight,
-  Home,
   Menu,
   Download,
   RefreshCw,
@@ -32,7 +31,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -45,6 +43,7 @@ import { useAnalysis, useAnalysisUpload } from "@/hooks/use-analysis";
 import type { AnalysisResult, DriftType, ExposureTag, StoredAnalysis, StoredImage, StoredDocument } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import DocumentViewer from "@/components/DocumentViewer";
+import { AppHeader } from "@/components/Layout";
 
 const BINARY_MIME_TYPES = new Set([
   "application/pdf",
@@ -800,35 +799,25 @@ export default function Analyze() {
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-background">
 
-      {/* Top Bar */}
-      <div className="h-12 border-b border-border/60 bg-card px-4 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-3">
-          <Link href="/">
-             <Button variant="ghost" size="icon" className="h-7 w-7">
-                <Home className="h-4 w-4 text-muted-foreground" />
-             </Button>
-          </Link>
-          <Link href="/devices" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            Devices
-          </Link>
-          <Separator orientation="vertical" className="h-5" />
-          <div className="flex items-center gap-2">
-             <span className="font-medium text-sm">Analysis</span>
-             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-             <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
-              <SelectTrigger className="w-[180px] h-7 text-xs bg-muted/40 border-0 focus:ring-0">
-                <SelectValue placeholder="Select Profile" />
-              </SelectTrigger>
-              <SelectContent>
-                {products?.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                ))}
-                {(!products || products.length === 0) && (
-                  <SelectItem value="__none__" disabled>No profiles yet</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Shared App Header */}
+      <AppHeader />
+
+      {/* Analysis Toolbar */}
+      <div className="h-10 border-b border-border/60 bg-card/80 px-4 flex items-center justify-between shrink-0 z-20">
+        <div className="flex items-center gap-2">
+          <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
+            <SelectTrigger className="w-[180px] h-7 text-xs bg-muted/40 border-0 focus:ring-0">
+              <SelectValue placeholder="Select Profile" />
+            </SelectTrigger>
+            <SelectContent>
+              {products?.map((p) => (
+                <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+              ))}
+              {(!products || products.length === 0) && (
+                <SelectItem value="__none__" disabled>No profiles yet</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-2">
